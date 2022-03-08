@@ -1,6 +1,14 @@
-#ifndef maillage.hpp
-#define maillage.hpp
+//
+//  maillage.hpp
+//  Maillage
+//
+//  Created by Mayeul CHAVANNE on 01/02/2022.
+//
 
+#ifndef maillage_hpp
+#define maillage_hpp
+
+#include <stdio.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -42,20 +50,35 @@ ostream & operator <<(ostream &, const Point &);
 
 class Numeros : public vector<int>
 {public :
-    Numeros(int i1, int i2, int i3); //constructeur
+    Numeros(int i1=0, int i2=0, int i3=0); //constructeur
+    ~Numeros(){} //destructeur
     int operator() (const int i) const; //operateur d'acces en lecture
-    int operator() (const int i); //operateur d'acces en ecriture
+    int & operator() (const int i); //operateur d'acces en ecriture
 };
 
 ostream& operator <<(ostream& out, const Numeros & N);
 //---------------------------------------------------------------------------
 //     classe Maillage  (2D)
 //---------------------------------------------------------------------------
+
 class Maillage
 {public:
     vector<Point> sommets;        //liste des sommets comptés une seule fois
-    list<Numeros> numelts;        //liste des numéros des sommets des rectangles
-    ...
+    list<Numeros> triangles;        //liste des numéros des sommets des triangles
+    
+    void maille_carre_unite(int n, int m);    //fonction de base maillant le carré unité
+    Maillage(int n, int m) //constructeur de maillage carré appelant maille_carre_unite
+    {
+        this->maille_carre_unite(n, m);
+    }
+    void affiche() const;    //fonction affichant la liste des sommets et des numéros des triangles
+    Maillage& tf_affine(const vector<double> & A, const vector<double> & t);  //fonction effectuant la transformation affine Ax + t
+    void maille_rectangle(double a, double b, double c, double d, int n, int m);  //fonction permettant de mailler le rectangle [a,b]*[c,d] avec m*n cases
+    Maillage(double a, double b, double c, double d, int n, int m) //constructeur de maillage rectangulaire [a,b]*[c,d] avec m*n case appelant maille_rectangle
+    {
+        this->maille_rectangle(a, b, c, d, n, m);
+    }
+    void saveToFile(const char *fn) const;   //export du fichier dans un maillage
 };
 
-#endif
+#endif /* maillage_hpp */
