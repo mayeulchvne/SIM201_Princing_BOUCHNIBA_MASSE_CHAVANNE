@@ -63,8 +63,9 @@ public:
     virtual double operator()(int i, int j) const =0;
     virtual double& operator()(int i, int j) =0;
     //opérations globale
-    
 
+    vector<int> profil(const vector<double>& V);
+    
 };
 
 //===================================================================================================

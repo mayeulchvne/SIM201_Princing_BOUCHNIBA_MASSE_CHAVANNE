@@ -78,6 +78,14 @@ ostream& operator<<(ostream& os, const vector<int>& v)
 }
 
 
+vector<int> profil(const vector<int>& v)
+{   vector<int> u(v.size());
+    u[0]=0;
+    for(int i=1;i<v.size();i++){
+        u[i]=i+1-v[i]+u[i-1];
+    }
+    return u;
+}
 
 
 //===================================================================================================
