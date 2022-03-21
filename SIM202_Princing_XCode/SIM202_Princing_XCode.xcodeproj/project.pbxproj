@@ -29,6 +29,8 @@
 		7DABF49D27E61C66002E73A2 /* maillage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = maillage.cpp; sourceTree = "<group>"; };
 		7DABF49E27E61C66002E73A2 /* elements_finis.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = elements_finis.hpp; sourceTree = "<group>"; };
 		7DABF49F27E61C66002E73A2 /* maillage.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = maillage.hpp; sourceTree = "<group>"; };
+		7DABF4A327E882AC002E73A2 /* maillage1.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = maillage1.txt; sourceTree = "<group>"; };
+		7DABF4A427E882AC002E73A2 /* maillage2.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = maillage2.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +67,8 @@
 				7DABF49E27E61C66002E73A2 /* elements_finis.hpp */,
 				7DABF49F27E61C66002E73A2 /* maillage.hpp */,
 				7DABF49D27E61C66002E73A2 /* maillage.cpp */,
+				7DABF4A327E882AC002E73A2 /* maillage1.txt */,
+				7DABF4A427E882AC002E73A2 /* maillage2.txt */,
 			);
 			path = SIM202_Princing_XCode;
 			sourceTree = "<group>";
