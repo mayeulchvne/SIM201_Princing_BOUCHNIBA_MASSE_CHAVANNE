@@ -22,9 +22,9 @@ void stop(const char * msg) {
 }
 
 //transforme les element d'un vecteur de vecteur en vecteur
-vector<double> vecteur(vector<vector<double>> vec, int i) {
+vector<double> vecteur(vector< vector<double> > vec, int i) {
     vector<double> vect;
-    vector<vector<double>> vecteur_vecteur=vec;
+    vector< vector<double> > vecteur_vecteur=vec;
     n=vecteur_vecteur[i].size();
     for (int k=0; k<n; ++k) {
         vect[k]=vecteur_vecteur[i][k];
