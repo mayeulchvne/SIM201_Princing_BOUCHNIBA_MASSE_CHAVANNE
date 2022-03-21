@@ -11,7 +11,7 @@
 #include "maillage.hpp"
 
 int main( int argc, char * argv[] )
-<<<<<<< HEAD
+//<<<<<<< HEAD
 { //test de la classe Point
   Point O, P(0,1), Q(1,1), R(1);
   cout<<"O+P+2.*Q-R/2.="<<(O+P+2.*Q-R/2.) <<endl;
