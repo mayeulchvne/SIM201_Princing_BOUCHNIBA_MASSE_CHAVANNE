@@ -28,7 +28,7 @@ using namespace std;
 void stop(const char * msg);                     
 
 //transforme les element d'un vecteur de vecteur en vecteur
-vector<double> vecteur(vector<vector<double>> vec, int i)
+vector<double> vecteur(vector<vector<double> > vec, int i)
 
 //===================================================================================================
 //                                     Classe Matrice
@@ -43,12 +43,8 @@ public:
     int dim; //taille de la matrice carrée
     vector<int> Stack; //matrice des profils
     vector<double> Mat; //matrice des coefficients
-    Matrice(){
-        this->Stack.resize(0,0.);
-        this->Mat.resize(0,0.);
-        this->dim=0;
-    }
-    Matrice(const vector<int> S){
+
+    Matrice(vector<int> S){
         this->dim=S.size();
         this->Stack=S;
         int h=this->Stack[dim-1];
@@ -71,8 +67,6 @@ public:
 
 };
 
-vector<int> profil(const vector<double>& V);
-
 
 
 //===================================================================================================
@@ -82,9 +76,7 @@ vector<int> profil(const vector<double>& V);
 class Matrice_S: public Matrice
 {
 public:
-    Matrice_S()
-        :Matrice(){}
-    Matrice_S(const vector<int> S)
+    Matrice_S(vector<int> S)
         :Matrice(S) {}
     Matrice_S(const Matrice& M)
         :Matrice(M) {}
@@ -117,9 +109,7 @@ vector<double> operator*(const Matrice_S& M,const vector<int>& X);
 class Matrice_PS: public Matrice
 {
 public:
-    Matrice_PS()
-        :Matrice(){}
-    Matrice_PS(const vector<int> S)
+    Matrice_PS(vector<int> S)
         :Matrice(S) {this->Mat.resize(2*(this->Mat.size())-(this->Stack.size()),0.);}
     Matrice_PS(const Matrice_PS& M)
         :Matrice(M) {}
@@ -147,8 +137,7 @@ public:
      Matrice_PS& operator=(const Matrice_PS& M);
      Matrice_PS& operator=(const Matrice_S& M);
      //fonctions membres
-    Matrice_PS* LU();
-    //Matrice_PS test();
+    vector<Matrice_PS> LU();
 };
 
 
@@ -173,7 +162,6 @@ ostream& operator<<(ostream& os,const Matrice& M);
 ostream& operator<<(ostream& os, const vector<double>& v);
 
 ostream& operator<<(ostream& os, const vector<int>& v);
-
 
 
 //---------------------------------------------------------------------------
@@ -259,6 +247,10 @@ class Maillage
     void affiche() const;
     //export du maillage dans un fichier
     void saveToFile(const char *fn) const;
+
+    //fonction generant le vecteur des indices des premiers coefficients non nuls de chaque 
+    //lignes du profil des matrices associées au maillage m*n cases (n lignes, m colonnes)
+    vector<int> indice_profil();
 };
 //fonction externes
 
@@ -283,10 +275,10 @@ class Video
 {public:
     Maillage maille;                 //maillage de base
     unsigned long M;                 //nombre d'images
-    list<vector<double>> images;     //liste des vecteurs des valeurs du maillage a chaque instant
+    list<vector<double> > images;     //liste des vecteurs des valeurs du maillage a chaque instant
     
     //constructeur par valeur pour M instant sur un rectangle [a,b]*[c,d] avec m*n cases, et fixant les valeurs initiales a Q
-    Video(unsigned long M, double a, double b, double c, double d, int n, int m, const vector<double> & Q);
+    Video(int M, double a, double b, double c, double d, int n, int m, const vector<double> & Q);
     //calcul du processus itératif pour un probleme donne
     void resolution(vector<double> & khi, double r);
 };
