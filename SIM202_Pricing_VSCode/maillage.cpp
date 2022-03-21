@@ -55,6 +55,7 @@ ostream& operator<<(ostream& os,const Matrice& M){
 }
 
 
+
 ostream& operator<<(ostream& os, const vector<double>& v) 
 {
     os << "[";
@@ -77,6 +78,14 @@ ostream& operator<<(ostream& os, const vector<int>& v)
 }
 
 
+vector<int> profil(const vector<int>& v)
+{   vector<int> u(v.size());
+    u[0]=0;
+    for(int i=1;i<v.size();i++){
+        u[i]=i+1-v[i]+u[i-1];
+    }
+    return u;
+}
 
 
 //===================================================================================================
@@ -323,7 +332,7 @@ Matrice_PS& Matrice_PS::operator+=(const Matrice_S& M)
 
 Matrice_PS& Matrice_PS::operator-=(const Matrice_S& M)
 {
-    if(this->dim!=M.d()){cout<<"les deux matrcies n'ont pas même dimensions"<<endl; exit(-1);}
+    if(this->dim!=M.d()){cout<<"les deux matrices n'ont pas même dimensions"<<endl; exit(-1);}
     vector<int> S(M.d(),0);
     for(int i=1;i<M.d();i++){
         S[i]=S[i-1]+max(this->Stack[i]-this->Stack[i-1],M.Stack[i]-M.Stack[i-1]);    
@@ -405,35 +414,35 @@ vector<double> operator*(Matrice_PS& M,vector<int>& X)
 
 
 //factorisation LU
-vector<Matrice_PS> Matrice_PS::LU()
+Matrice_PS* Matrice_PS::LU()
 {
+    vector<int> h=this->Stack;
     double d=this->d();
-    Matrice_PS U((*this).Stack);
-    Matrice_PS L((*this).Stack);
+    Matrice_PS L(h);
+    Matrice_PS U(h);
     double p=0;
     for(int i=1;i<=d;i++)
     {
-        p=(*this)(i,i);
+        p=this->aff(i,i);
         L(i,i)=1;
         for(int j=i+1;j<=d;j++)
         {
-            L(j,i)=(*this)(j,i)/p;
+            L(j,i)=this->aff(j,i)/p;
         }
         U(i,i)=p;
-        for(int k=i+1;k<=d;k++){U(i,k)=(*this)(i,k);}
+        for(int k=i+1;k<=d;k++){U(i,k)=this->aff(i,k);}
         for(int k=i+1;k<=d;k++)
         {
-            for(int j=i+1;j<=d;j++){(*this)(k,j)=(*this)(k,j)-L(k,i)*U(i,j);}
+            for(int j=i+1;j<=d;j++){(*this)(k,j)=this->aff(k,j)-L(k,i)*U(i,j);}
 
         }
         
     }
-    vector<Matrice_PS> T(2);
+    Matrice_PS* T=new Matrice_PS[2];
     T[0]=L;
     T[1]=U;
     return T;
 }
-
 
 
 //---------------------------------------------------------------------------
@@ -494,9 +503,9 @@ ostream& operator <<(ostream& out, const Numeros & N){
 
 //operateur d'affectation
 void Numeros::operator = (const Numeros & N) {
-    this->i1 = N.i1;
-    this->i2 = N.i2;
-    this->i3 = N.i3;
+    this->i1 = N[0];
+    this->i2 = N[2];
+    this->i3 = N[3];
 }
 
 //---------------------------------------------------------------------------

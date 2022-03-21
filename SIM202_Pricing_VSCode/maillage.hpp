@@ -43,8 +43,12 @@ public:
     int dim; //taille de la matrice carrée
     vector<int> Stack; //matrice des profils
     vector<double> Mat; //matrice des coefficients
-
-    Matrice(vector<int> S){
+    Matrice(){
+        this->Stack.resize(0,0.);
+        this->Mat.resize(0,0.);
+        this->dim=0;
+    }
+    Matrice(const vector<int> S){
         this->dim=S.size();
         this->Stack=S;
         int h=this->Stack[dim-1];
@@ -67,6 +71,8 @@ public:
 
 };
 
+vector<int> profil(const vector<double>& V);
+
 
 
 //===================================================================================================
@@ -76,7 +82,9 @@ public:
 class Matrice_S: public Matrice
 {
 public:
-    Matrice_S(vector<int> S)
+    Matrice_S()
+        :Matrice(){}
+    Matrice_S(const vector<int> S)
         :Matrice(S) {}
     Matrice_S(const Matrice& M)
         :Matrice(M) {}
@@ -109,7 +117,9 @@ vector<double> operator*(const Matrice_S& M,const vector<int>& X);
 class Matrice_PS: public Matrice
 {
 public:
-    Matrice_PS(vector<int> S)
+    Matrice_PS()
+        :Matrice(){}
+    Matrice_PS(const vector<int> S)
         :Matrice(S) {this->Mat.resize(2*(this->Mat.size())-(this->Stack.size()),0.);}
     Matrice_PS(const Matrice_PS& M)
         :Matrice(M) {}
@@ -137,7 +147,8 @@ public:
      Matrice_PS& operator=(const Matrice_PS& M);
      Matrice_PS& operator=(const Matrice_S& M);
      //fonctions membres
-    vector<Matrice_PS> LU();
+    Matrice_PS* LU();
+    //Matrice_PS test();
 };
 
 
@@ -162,6 +173,7 @@ ostream& operator<<(ostream& os,const Matrice& M);
 ostream& operator<<(ostream& os, const vector<double>& v);
 
 ostream& operator<<(ostream& os, const vector<int>& v);
+
 
 
 //---------------------------------------------------------------------------
