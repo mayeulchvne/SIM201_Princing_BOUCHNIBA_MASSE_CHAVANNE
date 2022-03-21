@@ -5,7 +5,9 @@
 //  Created by Mayeul CHAVANNE on 01/02/2022.
 //
 
+#include <vector>
 #include <iostream>
+
 #include <fstream>
 #include "maillage.hpp"
 
@@ -39,5 +41,24 @@ int main( int argc, char * argv[] )
 //  Maillage mf = Maillage(4,2) + mr; //concaténation de maillages
 //  mf.affiche();
 //  mf.saveToFile("mf.mail");
+
+vector<double> Mat_des_gradients_w_1;
+    Mat_des_gradients_w_1.push_back(-1); Mat_des_gradients_w_1.push_back(-1);
+    vector<double> Mat_des_gradients_w_2;
+    Mat_des_gradients_w_2.push_back(1); Mat_des_gradients_w_2.push_back(0);
+    vector<double> Mat_des_gradients_w_3;
+    Mat_des_gradients_w_3.push_back(0); Mat_des_gradients_w_3.push_back(1);
+
+    vector<vector<double>> Mat_des_gradients_w;
+    Mat_des_gradients_w.push_back(Mat_des_gradients_w_1);
+    Mat_des_gradients_w.push_back(Mat_des_gradients_w_2);
+    Mat_des_gradients_w.push_back(Mat_des_gradients_w_3);
+
+
+for (int i = 0; i < Mat_des_gradients_w.size(); i++) {
+        cout << Mat_des_gradients_w[i] << " ";
+        cout << endl;
+    };
+
   return 0;
 }
