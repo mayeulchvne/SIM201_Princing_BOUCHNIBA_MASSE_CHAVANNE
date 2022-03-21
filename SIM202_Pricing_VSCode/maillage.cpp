@@ -75,9 +75,9 @@ ostream& operator <<(ostream& out, const Numeros & N){
 
 //operateur d'affectation
 void Numeros::operator = (const Numeros & N) {
-    this->i1 = N.i1;
-    this->i2 = N.i2;
-    this->i3 = N.i3;
+    this->i1 = N[0];
+    this->i2 = N[2];
+    this->i3 = N[3];
 }
 
 //---------------------------------------------------------------------------
