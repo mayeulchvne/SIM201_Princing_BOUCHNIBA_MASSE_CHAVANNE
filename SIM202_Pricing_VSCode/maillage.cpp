@@ -358,10 +358,10 @@ Matrice_PS& Matrice_PS::operator=(const Matrice_S& M)
     this->dim=M.d();
     this->Stack=M.Stack;
     this->Mat=M.Mat;
-        auto it1=this->Mat.end();
+        vector<double>::iterator it1=this->Mat.end();
         vector<double> u(this->Mat);
-        auto it2=u.begin();
-        auto it3=u.end();
+        vector<double>::iterator it2=u.begin();
+        vector<double>::iterator it3=u.end();
         for(int i=0;i<this->d();i++){u.erase(it2+this->Stack[i]);}
         this->Mat.insert(it1,it2,it3);
     return *this;
