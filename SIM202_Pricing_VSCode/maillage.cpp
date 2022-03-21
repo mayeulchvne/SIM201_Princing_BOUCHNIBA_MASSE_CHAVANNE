@@ -11,11 +11,439 @@
 
 using namespace std;
 
+//---------------------------------------------------------------------------
+//     quelques fonctions utilitaires
+//---------------------------------------------------------------------------
+
 // utilitaire de messages d'erreur
 void stop(const char * msg) {
     cout << "ERREUR :" << msg << endl;
     exit(-1);
 }
+
+//transforme les element d'un vecteur de vecteur en vecteur
+vector<double> vecteur(vector<vector<double>> vec, int i) {
+    vector<double> vect;
+    vector<vector<double>> vecteur_vecteur=vec;
+    n=vecteur_vecteur[i].size();
+    for (int k=0; k<n; ++k) {
+        vect[k]=vecteur_vecteur[i][k];
+    }
+return vect;
+}
+
+//===================================================================================================
+//                                     Classe Matrice
+//===================================================================================================
+
+
+//opérateurs internes et fonctions membres
+
+double Matrice::aff(int i,int j) const {return (*this)(i,j);}
+
+//opérateurs externes
+ostream& operator<<(ostream& os,const Matrice& M){
+    int d=M.dim;
+    os<<"\n";
+    for(int i=1;i<=d;i++){
+        os<<"|";
+        for(int j=1;j<d;j++){os<<M(i,j)<<" ";}
+        os<<M(i,d)<<"|"<<"\n";
+    }
+    cout<<endl;
+    return os;
+}
+
+
+
+ostream& operator<<(ostream& os, const vector<double>& v) 
+{
+    os << "[";
+    for (vector<double>::const_iterator ii = v.begin(); ii != v.end(); ++ii)
+    {
+        os << " " << *ii;
+    }
+    os << " ]";
+    return os;
+}
+ostream& operator<<(ostream& os, const vector<int>& v) 
+{
+    os << "[";
+    for (vector<int>::const_iterator ii = v.begin(); ii != v.end(); ++ii)
+    {
+        os << " " << *ii;
+    }
+    os << " ]";
+    return os;
+}
+
+
+vector<int> profil(const vector<int>& v)
+{   vector<int> u(v.size());
+    u[0]=0;
+    for(int i=1;i<v.size();i++){
+        u[i]=i+1-v[i]+u[i-1];
+    }
+    return u;
+}
+
+
+//===================================================================================================
+//                                     Classe Matrice_S
+//===================================================================================================
+
+
+
+//opérateurs internes
+
+double Matrice_S::operator()(int i, int j) const
+{
+        if(i>this->dim || j>this->dim){
+            cout<<"Erreur, hors dimension, la dimension est"<<this->dim;
+            exit(EXIT_FAILURE);
+        }
+        if(j>i){return (*this)(j,i);}
+        if(i==j){return this->Mat[this->Stack[i-1]];}
+        int Pm1=i-(this->Stack[i-1] - this->Stack[i-2]) + 1; //on détermine le profil de la ligne
+        if(j<Pm1){return 0.;}
+        return this->Mat[this->Stack[i-1]-(i-j)];
+}
+
+double& Matrice_S::operator()(int i, int j)
+{
+ if(i>this->dim || j>this->dim){
+            cout<<"Erreur, hors dimension, la dimension est"<<this->dim;
+            exit(EXIT_FAILURE);
+        }
+        if(j>i){return (*this)(j,i);}
+        if(i==j){return this->Mat[this->Stack[i-1]];}
+        int Pm2=i-(this->Stack[i-1] - this->Stack[i-2]) + 1; //on détermine le profil de la ligne
+        if(j<Pm2){cout<<"Erreur, hors profil, j doit être sup à "<<Pm2<<" pour la ligne "<<i<<endl; exit(-1);}
+        return this->Mat[this->Stack[i-1]-(i-j)];
+}
+
+//**opérateurs algébriques sur la même classe
+Matrice_S&  Matrice_S::operator+=(const Matrice_S& M){
+    if(this->dim!=M.d()){cout<<"les deux matrcies n'ont pas même dimensions"<<endl; exit(-1);}
+    vector<int> S(M.d(),0);
+    for(int i=1;i<M.d();i++){
+        S[i]=S[i-1]+max(this->Stack[i]-this->Stack[i-1],M.Stack[i]-M.Stack[i-1]);    
+    }
+    Matrice_S U(S);
+    U(1,1)=M(1,1)+(*this)(1,1);
+    for(int i=1;i<U.d();i++){
+        for(int j=i-(U.Stack[i]-U.Stack[i-1])+1;j<=i;j++){
+            U(i+1,j+1)=M(i+1,j+1)+this->aff(i+1,j+1); // (*this)(i,j) fait expressement appel à la fonction non constante d'écriture et on ne peut pas utiliser const_cast   
+        }
+    }
+    this->Stack=U.Stack;
+    this->Mat=U.Mat;
+    return *this;
+}
+Matrice_S& Matrice_S::operator-=(const Matrice_S& M){
+    if(this->dim!=M.d()){cout<<"les deux matrcies n'ont pas même dimensions"<<endl; exit(-1);}  //On crée un profil adapté à la somme des deux matrices
+    vector<int> S(M.d(),0);
+    for(int i=1;i<M.d();i++){
+        S[i]=S[i-1]+max(this->Stack[i]-this->Stack[i-1],M.Stack[i]-M.Stack[i-1]);    
+    }
+    Matrice_S U(S);                                                                 //On crée une Matrice temporaire à laquelle on attribue le profil crée
+    U(1,1)=M(1,1)-(*this)(1,1);                                                     //On ne parcours que les indices intéressants par soucis d'efficacité
+    for(int i=1;i<U.d();i++){
+        for(int j=i-(U.Stack[i]-U.Stack[i-1])+1;j<=i;j++){
+            U(i+1,j+1)=this->aff(i+1,j+1)-M(i+1,j+1); // (*this)(i,j) fait expressement appel à la fonction non constante d'écriture et on ne peut pas utiliser const_cast   
+        }
+    }
+    this->Stack=U.Stack;                              //On attribue à l'élément courant les caractéristiques de U.
+    this->Mat=U.Mat;
+    return *this;
+}
+Matrice_S& Matrice_S::operator*=(const double& a)
+{   for(int i=0;i<this->Mat.size();i++){this->Mat[i]*=a;}
+    return *this;
+}
+
+Matrice_S& Matrice_S::operator/=(const double& a)
+{
+    if(a==0){cout<<"on ne divise pas par 0"<<endl; exit(-1);}
+    return (*this)*=(1/a);
+}
+
+Matrice_S& Matrice_S::operator=(const Matrice_S& M)
+{
+    if(this->d()!=M.d()){cout<<"attention les matrices n'étaient pas de même taille, l'opération a quand même été réalisée"<<endl;}
+    this->dim=M.d();
+    this->Stack=M.Stack;
+    this->Mat=M.Mat;
+    return *this;
+}
+
+
+
+//fonctions externes
+//**opérateurs algébriques
+Matrice_S operator+(const Matrice_S& M,const Matrice_S& H){ Matrice_S A(M); return A+=H;}
+Matrice_S operator-(const Matrice_S& M,const Matrice_S& H){Matrice_S A(M); return A-=H;}
+Matrice_S operator*(const Matrice_S& M,const double& a){Matrice_S A(M); return A*=a;}
+Matrice_S operator/(const Matrice_S& M,const double& a){Matrice_S A(M); return A/=a;}
+
+vector<double> operator*(const Matrice_S& M,const vector<double>& X)
+{   
+    int d=X.size();
+    if(M.d()!=d){cout<<"erreur dimensions pour le produit matrice vecteur "<<M.d()<<" ; "<<d<<endl; exit(-1);}
+    vector<double> u(d,0.);
+    for(int i=0;i<d;i++)
+    {
+        for(int j=0;j<d;j++){u[i]+=M(i+1,j+1)*X[j];}
+    }
+    return u;
+}
+
+vector<double> operator*(const Matrice_S& M,const vector<int>& X)
+{   
+    int d=X.size();
+    if(M.d()!=d){cout<<"erreur dimensions pour le produit matrice vecteur "<<M.d()<<" ; "<<d<<endl; exit(-1);}
+    vector<double> u(d,0.);
+    for(int i=0;i<d;i++)
+    {
+        for(int j=0;j<d;j++){u[i]+=M(i+1,j+1)*X[j];}
+    }
+    return u;
+}
+
+
+
+//===================================================================================================
+//                                     Classe Matrice_PS
+//===================================================================================================
+
+
+//opérateurs internes
+double Matrice_PS::operator()(int i, int j) const {
+    if(i>this->dim || j>this->dim){
+        cout<<"Erreur, hors dimension, la dimension est"<<this->dim;
+        exit(EXIT_FAILURE);
+    }
+    if(i==j){return this->Mat[this->Stack[i-1]];}
+    if(j>i){
+        int Pm1=j-(this->Stack[j-1] - this->Stack[j-2]) + 1;
+        if(i<Pm1){return 0.;}
+        return this->Mat[this->Stack[j-1]-(j-i) + (this->Stack[this->dim-1]+1)-(j-1)];
+    }
+    int Pm1=i-(this->Stack[i-1] - this->Stack[i-2]) + 1; //on détermine le profil de la ligne
+    if(j<Pm1){return 0.;}
+    return this->Mat[this->Stack[i-1]-(i-j)];
+}
+
+double& Matrice_PS::operator()(int i, int j) {
+    if(i>this->dim || j>this->dim){
+        cout<<"Erreur, hors dimension, la dimension est"<<this->dim;
+        exit(EXIT_FAILURE);
+    }
+    if(i==j){return this->Mat[this->Stack[i-1]];}
+    if(j>i){
+        int Pm2=j-(this->Stack[j-1] - this->Stack[j-2]) + 1;
+        if(i<Pm2){cout<<"Erreur, hors profil, i doit être sup à "<<Pm2; exit(-1);}
+        return this->Mat[this->Stack[j-1]-(j-i) + (this->Stack[this->dim-1]+1)-(j-1)];
+    }
+    int Pm2=i-(this->Stack[i-1] - this->Stack[i-2]) + 1; //on détermine le profil de la ligne
+    if(j<Pm2){cout<<"Erreur, hors profil, j doit être sup à "<<Pm2; exit(-1);}
+    return this->Mat[this->Stack[i-1]-(i-j)];
+}
+
+//**opérateurs algébriques sur la même classe
+
+Matrice_PS& Matrice_PS::operator+=(const Matrice_PS& M)
+{
+    if(this->dim!=M.d()){cout<<"les deux matrcies n'ont pas même dimensions"<<endl; exit(-1);}
+    vector<int> S(M.d(),0);
+    for(int i=1;i<M.d();i++){
+        S[i]=S[i-1]+max(this->Stack[i]-this->Stack[i-1],M.Stack[i]-M.Stack[i-1]);    
+    }
+    Matrice_PS U(S);
+    U(1,1)=M(1,1)+(*this)(1,1);
+    for(int i=1;i<U.d();i++){
+        U(i+1,i+1)=this->aff(i+1,i+1)+M(i+1,i+1);
+        for(int j=i-(U.Stack[i]-U.Stack[i-1])+1;j<i;j++){
+            U(i+1,j+1)=this->aff(i+1,j+1)+M(i+1,j+1); // (*this)(i,j) fait expressement appel à la fonction non constante d'écriture et on ne peut pas utiliser const_cast
+            U(j+1,i+1)=this->aff(j+1,i+1)+M(j+1,i+1);
+        }
+    }
+    this->Stack=U.Stack;
+    this->Mat=U.Mat;
+    return *this;
+
+}
+
+Matrice_PS& Matrice_PS::operator-=(const Matrice_PS& M)
+{
+    if(this->dim!=M.d()){cout<<"les deux matrcies n'ont pas même dimensions"<<endl; exit(-1);}
+    vector<int> S(M.d(),0);
+    for(int i=1;i<M.d();i++){
+        S[i]=S[i-1]+max(this->Stack[i]-this->Stack[i-1],M.Stack[i]-M.Stack[i-1]);    
+    }
+    Matrice_PS U(S);
+    U(1,1)=M(1,1)-(*this)(1,1);
+    for(int i=1;i<U.d();i++){
+        U(i+1,i+1)=this->aff(i+1,i+1)-M(i+1,i+1);
+        for(int j=i-(U.Stack[i]-U.Stack[i-1])+1;j<i;j++){
+            U(i+1,j+1)=this->aff(i+1,j+1)-M(i+1,j+1); // (*this)(i,j) fait expressement appel à la fonction non constante d'écriture et on ne peut pas utiliser const_cast
+            U(j+1,i+1)=this->aff(j+1,i+1)-M(j+1,i+1);
+        }
+    }
+    this->Stack=U.Stack;
+    this->Mat=U.Mat;
+    return *this;
+
+}
+Matrice_PS& Matrice_PS::operator*=(const double& a)
+{   for(int i=0;i<this->Mat.size();i++){this->Mat[i]*=a;}
+    return *this;
+}
+
+Matrice_PS& Matrice_PS::operator/=(const double& a)
+{
+    if(a==0){cout<<"on ne divise pas par 0"<<endl; exit(-1);}
+    return (*this)*=(1/a);
+}
+
+
+//**opérateurs algébriques sur Matrice_S
+
+Matrice_PS& Matrice_PS::operator+=(const Matrice_S& M)
+{
+    if(this->dim!=M.d()){cout<<"les deux matrcies n'ont pas même dimensions"<<endl; exit(-1);}
+    vector<int> S(M.d(),0);
+    for(int i=1;i<M.d();i++){
+        S[i]=S[i-1]+max(this->Stack[i]-this->Stack[i-1],M.Stack[i]-M.Stack[i-1]);    
+    }
+    Matrice_PS U(S);
+    U(1,1)=M(1,1)+(*this)(1,1);
+    for(int i=1;i<U.d();i++){
+        U(i+1,i+1)=this->aff(i+1,i+1)+M(i+1,i+1);
+        for(int j=i-(U.Stack[i]-U.Stack[i-1])+1;j<i;j++){
+            U(i+1,j+1)=this->aff(i+1,j+1)+M(i+1,j+1); // (*this)(i,j) fait expressement appel à la fonction non constante d'écriture et on ne peut pas utiliser const_cast
+            U(j+1,i+1)=this->aff(j+1,i+1)+M(j+1,i+1);
+        }
+    }
+    this->Stack=U.Stack;
+    this->Mat=U.Mat;
+    return *this;
+}
+
+Matrice_PS& Matrice_PS::operator-=(const Matrice_S& M)
+{
+    if(this->dim!=M.d()){cout<<"les deux matrices n'ont pas même dimensions"<<endl; exit(-1);}
+    vector<int> S(M.d(),0);
+    for(int i=1;i<M.d();i++){
+        S[i]=S[i-1]+max(this->Stack[i]-this->Stack[i-1],M.Stack[i]-M.Stack[i-1]);    
+    }
+    Matrice_PS U(S);
+    U(1,1)=M(1,1)-(*this)(1,1);
+    for(int i=1;i<U.d();i++){
+        U(i+1,i+1)=this->aff(i+1,i+1)-M(i+1,i+1);
+        for(int j=i-(U.Stack[i]-U.Stack[i-1])+1;j<i;j++){
+            U(i+1,j+1)=this->aff(i+1,j+1)-M(i+1,j+1); // (*this)(i,j) fait expressement appel à la fonction non constante d'écriture et on ne peut pas utiliser const_cast
+            U(j+1,i+1)=this->aff(j+1,i+1)-M(j+1,i+1);
+        }
+    }
+    this->Stack=U.Stack;
+    this->Mat=U.Mat;
+    return *this;
+
+}
+Matrice_PS& Matrice_PS::operator=(const Matrice_PS& M)
+{
+    if(this->d()!=M.d()){cout<<"attention les matrices n'étaient pas de même taille, l'opération a quand même été réalisée"<<endl;}
+    this->dim=M.d();
+    this->Stack=M.Stack;
+    this->Mat=M.Mat;
+    return *this;
+}
+
+Matrice_PS& Matrice_PS::operator=(const Matrice_S& M)
+{
+    if(this->d()!=M.d()){cout<<"attention les matrices n'étaient pas de même taille, l'opération a quand même été réalisée"<<endl;}
+    this->dim=M.d();
+    this->Stack=M.Stack;
+    this->Mat=M.Mat;
+        auto it1=this->Mat.end();
+        vector<double> u(this->Mat);
+        auto it2=u.begin();
+        auto it3=u.end();
+        for(int i=0;i<this->d();i++){u.erase(it2+this->Stack[i]);}
+        this->Mat.insert(it1,it2,it3);
+    return *this;
+}
+
+
+
+//Opérateurs externes
+Matrice_PS operator+(const Matrice_PS& M,const Matrice_PS& H){Matrice_PS A(M); return A+=H;}
+Matrice_PS operator+(const Matrice_PS& M,const Matrice_S& H){Matrice_PS A(M); return A+=H;}
+Matrice_PS operator+(const Matrice_S& M,const Matrice_PS& H){Matrice_PS A(H); return A+=M;}
+
+Matrice_PS operator-(const Matrice_PS& M,const Matrice_PS& H){Matrice_PS A(M); return A-=H;}
+Matrice_PS operator-(const Matrice_PS& M,const Matrice_S& H){Matrice_PS A(M); return A-=H;}
+Matrice_PS operator-(const Matrice_S& M,const Matrice_PS& H){Matrice_PS A(H); return A-=M;}
+
+Matrice_PS operator*(const Matrice_PS& M,const double& a){Matrice_PS A(M); return A*=a;}
+Matrice_PS operator/(const Matrice_PS& M,const double& a){Matrice_PS A(M); return A/=a;}
+
+vector<double> operator*(Matrice_PS& M,vector<double>& X)
+{   
+    int d=X.size();
+    if(M.d()!=d){cout<<"erreur dimensions pour le produit matrice vecteur "<<M.d()<<" ; "<<d<<endl; exit(-1);}
+    vector<double> u(d,0.);
+    for(int i=0;i<d;i++)
+    {
+        for(int j=0;j<d;j++){u[i]+=M(i+1,j+1)*X[j];}
+    }
+    return u;
+}
+vector<double> operator*(Matrice_PS& M,vector<int>& X)
+{   
+    int d=X.size();
+    if(M.d()!=d){cout<<"erreur dimensions pour le produit matrice vecteur "<<M.d()<<" ; "<<d<<endl; exit(-1);}
+    vector<double> u(d,0.);
+    for(int i=0;i<d;i++)
+    {
+        for(int j=0;j<d;j++){u[i]+=M(i+1,j+1)*X[j];}
+    }
+    return u;
+}
+
+
+//factorisation LU
+Matrice_PS* Matrice_PS::LU()
+{
+    vector<int> h=this->Stack;
+    double d=this->d();
+    Matrice_PS L(h);
+    Matrice_PS U(h);
+    double p=0;
+    for(int i=1;i<=d;i++)
+    {
+        p=this->aff(i,i);
+        L(i,i)=1;
+        for(int j=i+1;j<=d;j++)
+        {
+            L(j,i)=this->aff(j,i)/p;
+        }
+        U(i,i)=p;
+        for(int k=i+1;k<=d;k++){U(i,k)=this->aff(i,k);}
+        for(int k=i+1;k<=d;k++)
+        {
+            for(int j=i+1;j<=d;j++){(*this)(k,j)=this->aff(k,j)-L(k,i)*U(i,j);}
+
+        }
+        
+    }
+    Matrice_PS* T=new Matrice_PS[2];
+    T[0]=L;
+    T[1]=U;
+    return T;
+}
+
 
 //---------------------------------------------------------------------------
 //     classe POINT  (point 2D)
@@ -276,16 +704,12 @@ return KK;
 //MATRICE D
 Matrice Maillage::mat_D() {
     Matrice DD(this->sommets.size());
-    Matrice M(mat_M());
-    Matrice B(mat_B());
-    Matrice K(mat_M());
+    Matrice M(this->mat_M());
+    Matrice B(this->mat_B());
+    Matrice K(this->mat_M());
     DD=r*M+B+K;
 return DD;
 }
-
-//calcul du maillage ulterieur à partir d'un maillage existant
-Maillage& Maillage::resolution(vector<double> & khi, double r) {
-
 
 //CALCUL MATRICE SOURCE A
 Matrice source_A(Point *P) {
@@ -304,7 +728,7 @@ return V;
 }
 
 //CALCUL DE MATRICE ELEMENTAIRE M
-Matrice mat_elem_M (Point P1,Point P2,Point P3){
+Matrice mat_elem_M (Point P1,Point P2,Point P3) {
     double x1 = P1.x; double y1 = P1.y; //coordonnees des points du triangle choisi pour calcul sa matrice de masse (elementaire)
     double x2 = P2.x; double y2 = P2.y;
     double x3 = P3.x; double y3 = P3.y;
@@ -330,7 +754,7 @@ Matrice mat_elem_M (Point P1,Point P2,Point P3){
         }
     }
 return M_elem;
-}   
+} 
 
 //CALCUL MATRICE ELEMENTAIRE K
 Matrice mat_elem_K (Point * P1,Point * P2,Point * P3) {
@@ -401,7 +825,7 @@ Matrice mat_elem_K (Point * P1,Point * P2,Point * P3) {
         }
     }
 return Kel;
-};
+}
 
 //CALCUL MATRICE ELEMENTAIRE B
 Matrice mat_elem_B(Point * P1,Point * P2,Point * P3)) {
@@ -447,27 +871,17 @@ Matrice mat_elem_B(Point * P1,Point * P2,Point * P3)) {
 return Bel;
 }
 
+//INVERSION D'UN SYSTEME LINEAIRE PAR FACTORISATION LU
+vector<double>& Maillage::Gauss(){
+    int n=this->valeurs.size();
 
-
-
-
-
-
-
-
-
-vector<double>& Gauss(vector<double>& P_apres, const vector<double>& P_avant){
-    vector<double>& P_k1;
-    P_k1=P_apres;
-    int n=P_k1.size();
-
-    Matrice M(mat_M());
-    Matrice D(mat_D());
+    Matrice M(this->mat_M());
+    Matrice D(this->mat_D());
 
     Matrice E(M+(delta_t/2)*D); //à définir delta_t
     Matrice F(M-(delta_t/2)*D); //à définir delta_t
     vector<double>& B;
-    B=F*P_avant;
+    B=F*P_k;
     E.LU();
     Matrice L(E.LU()[0]);
     Matrice U(E.LU()[1]);
@@ -493,6 +907,11 @@ vector<double>& Gauss(vector<double>& P_apres, const vector<double>& P_avant){
     }
 return X;
 }
+
+//calcul du maillage ulterieur à partir d'un maillage existant
+Maillage& Maillage::resolution(vector<double> & khi, double r) {
+    Maillage M(*this);
+    M.valeurs = this->Gauss();
 }
 
 //fonction affichant la liste des sommets et des numéros des triangles

@@ -20,7 +20,160 @@
 
 using namespace std;
 
-void stop(const char * msg);                     // message d'arrêt
+//---------------------------------------------------------------------------
+//     quelques fonctions utilitaires
+//---------------------------------------------------------------------------
+
+// message d'arrêt
+void stop(const char * msg);                     
+
+//transforme les element d'un vecteur de vecteur en vecteur
+vector<double> vecteur(vector<vector<double>> vec, int i)
+
+//===================================================================================================
+//                                     Classe Matrice
+//===================================================================================================
+
+class Matrice {
+
+protected:
+    virtual double aff(int i, int j) const; 
+
+public:
+    int dim; //taille de la matrice carrée
+    vector<int> Stack; //matrice des profils
+    vector<double> Mat; //matrice des coefficients
+    Matrice(){
+        this->Stack.resize(0,0.);
+        this->Mat.resize(0,0.);
+        this->dim=0;
+    }
+    Matrice(const vector<int> S){
+        this->dim=S.size();
+        this->Stack=S;
+        int h=this->Stack[dim-1];
+        this->Mat.resize(h+1,0.);
+    }
+    Matrice(const Matrice& M){
+        this->dim=M.dim;
+        this->Stack=M.Stack;
+        this->Mat=M.Mat;
+    }
+    virtual ~Matrice(){}; //Destructeur virtuel de la classe
+
+    //accesseur
+    int d() const{return this->dim;}
+    //accesseurs virtuels purs
+    virtual double operator()(int i, int j) const =0;
+    virtual double& operator()(int i, int j) =0;
+    //opérations globale
+    
+
+};
+
+vector<int> profil(const vector<double>& V);
+
+
+
+//===================================================================================================
+//                                     Classe héritée Matrice_S
+//===================================================================================================
+
+class Matrice_S: public Matrice
+{
+public:
+    Matrice_S()
+        :Matrice(){}
+    Matrice_S(const vector<int> S)
+        :Matrice(S) {}
+    Matrice_S(const Matrice& M)
+        :Matrice(M) {}
+    virtual ~Matrice_S(){};
+
+    virtual double operator()(int i, int j) const ;
+    virtual double& operator()(int i, int j) ;
+    //opérateurs algébriques 
+     Matrice_S& operator+=(const Matrice_S& M);
+     Matrice_S& operator-=(const Matrice_S& M);
+     Matrice_S& operator*=(const double& a);
+     Matrice_S& operator/=(const double& a);
+     Matrice_S& operator=(const Matrice_S& M);
+
+};
+
+Matrice_S operator+(const Matrice_S& M,const Matrice_S& H);
+Matrice_S operator-(const Matrice_S& M,const Matrice_S& H);
+Matrice_S operator*(const Matrice_S& M,const double& a);
+Matrice_S operator/(const Matrice_S& M,const double& a);
+vector<double> operator*(const Matrice_S& M,const vector<double>& X);
+vector<double> operator*(const Matrice_S& M,const vector<int>& X);
+
+
+//===================================================================================================
+//                                     Classe héritée Matrice_PS
+//===================================================================================================
+
+
+class Matrice_PS: public Matrice
+{
+public:
+    Matrice_PS()
+        :Matrice(){}
+    Matrice_PS(const vector<int> S)
+        :Matrice(S) {this->Mat.resize(2*(this->Mat.size())-(this->Stack.size()),0.);}
+    Matrice_PS(const Matrice_PS& M)
+        :Matrice(M) {}
+    Matrice_PS(const Matrice_S& M)
+        :Matrice(M){
+            auto it1=this->Mat.end();                           //création de l'espace de stockage supplémentaire pour la matrice non symétrique
+            vector<double> u(this->Mat);                        //on insert Mat privée des coefficients diagonaux à la fin de Mat 
+            auto it2=u.begin();
+            auto it3=u.end();
+            for(int i=0;i<this->d();i++){u.erase(it2+this->Stack[i]);}
+            this->Mat.insert(it1,it2,it3);
+        }
+    virtual ~Matrice_PS(){};
+    //accesseurs
+    virtual double operator()(int i, int j) const;
+    virtual double& operator()(int i, int j);
+    //opérateurs algébriques
+     Matrice_PS& operator+=(const Matrice_PS& M);
+     Matrice_PS& operator-=(const Matrice_PS& M);
+     Matrice_PS& operator*(const Matrice_PS& M);
+     Matrice_PS& operator+=(const Matrice_S& M);
+     Matrice_PS& operator-=(const Matrice_S& M);
+     Matrice_PS& operator*=(const double& a);
+     Matrice_PS& operator/=(const double& a);
+     Matrice_PS& operator=(const Matrice_PS& M);
+     Matrice_PS& operator=(const Matrice_S& M);
+     //fonctions membres
+    Matrice_PS* LU();
+    //Matrice_PS test();
+};
+
+
+Matrice_PS operator+(const Matrice_PS& M,const Matrice_S& H);
+Matrice_PS operator+(const Matrice_S& M,const Matrice_PS& H);
+Matrice_PS operator+(const Matrice_S& M,const Matrice_PS& H);
+
+Matrice_PS operator-(const Matrice_PS& M,const Matrice_PS& H);
+Matrice_PS operator-(const Matrice_PS& M,const Matrice_S& H);
+Matrice_PS operator-(const Matrice_S& M,const Matrice_PS& H);
+
+Matrice_PS operator*(const Matrice_PS& M,const double& a);
+Matrice_PS operator/(const Matrice_PS& M,const double& a);
+vector<double> operator*(Matrice_PS& M,vector<double>& X);
+vector<double> operator*(Matrice_PS& M,vector<int>& X);
+
+
+//Flux de sortis
+
+ostream& operator<<(ostream& os,const Matrice& M);
+
+ostream& operator<<(ostream& os, const vector<double>& v);
+
+ostream& operator<<(ostream& os, const vector<int>& v);
+
 
 
 //---------------------------------------------------------------------------
