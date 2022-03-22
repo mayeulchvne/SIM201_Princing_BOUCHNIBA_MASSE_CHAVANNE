@@ -47,7 +47,7 @@ protected:
 
 public:
     int dim; //taille de la matrice carrée
-    vector<int> Stack; //matrice des profils
+    vector<int> Stack; //matrice des indices de position des coefficients diagnonaux dans Mat
     vector<double> Mat; //matrice des coefficients
 
     Matrice(vector<int> S){
@@ -68,11 +68,9 @@ public:
     //accesseurs virtuels purs
     virtual double operator()(int i, int j) const =0;
     virtual double& operator()(int i, int j) =0;
-    //opérations globale
     
 };
 
-vector<int> profil(const vector<double>& V);
 
 //===================================================================================================
 //                                     Classe héritée Matrice_S
@@ -121,9 +119,9 @@ public:
         :Matrice(M) {}
     Matrice_PS(const Matrice_S& M)
         :Matrice(M) {
-            vector<double>::iterator it1=this->Mat.end();                           //création de l'espace de stockage supplémentaire pour la matrice non symétrique
-            vector<double> u(this->Mat);                        //on insert Mat privée des coefficients diagonaux à la fin de Mat 
-            vector<double>::iterator it2=u.begin();
+            vector<double>::iterator it1=this->Mat.end();       //Création de l'espace de stockage supplémentaire pour la matrice non symétrique
+            vector<double> u(this->Mat);                        //On insert Mat privée des coefficients diagonaux à la fin de Mat 
+            vector<double>::iterator it2=u.begin();             //De cette façon le calcul est beaucoup moins couteux que si l'on avait crée le profil vide et rempli la matrice crée 
             vector<double>::iterator it3=u.end();
             for(int i=0;i<this->d();i++){u.erase(it2+this->Stack[i]);}
             this->Mat.vector<double>::insert(it1,it2,it3);
@@ -143,8 +141,8 @@ public:
      Matrice_PS& operator=(const Matrice_PS& M);
      Matrice_PS& operator=(const Matrice_S& M);
 
-     //factorisation LU
-    Matrice_PS& Matrice_PS::LU();
+    //factorisation LU
+    Matrice_PS& LU();
 };
 
 
@@ -169,6 +167,19 @@ ostream& operator<<(ostream& os,const Matrice& M);
 ostream& operator<<(ostream& os, const vector<double>& v);
 
 ostream& operator<<(ostream& os, const vector<int>& v);
+
+//===================================================================================================
+//                                     Fonctions utiles sur les profils et Matrices
+//===================================================================================================
+
+vector<int> profil(const vector<double>& v);
+vector<int> profil_colonne(const vector<double>& v);
+vector<int> profil_inv(const vector<int>& v);
+bool verif_profil(const Matrice_PS& M,int i,int j);
+
+Matrice_PS down(const Matrice_PS& M); //Pour extraire la première matrice de rang n-1 (A privée de sa première ligne et première colonne)
+Matrice_S down_S(const Matrice_S& M);
+
 
 
 
@@ -221,8 +232,6 @@ class Maillage
     vector<double> valeurs;         //vecteur des valeurs prise par le maillage à chaque sommet
     list<Numeros> triangles;        //liste des numéros des sommets des triangles
 
-    //CONSTRUCTEUR PAR DÉFAUT
-    Maillage();
     //constructeur par copie d'un maillage
     Maillage(Maillage & );
     //fonction de base maillant le carré unité avec m*n cases (n lignes, m colonnes)
@@ -288,7 +297,7 @@ class Video
     //constructeur par valeur pour M instant sur un rectangle [a,b]*[c,d] avec m*n cases, et fixant les valeurs initiales a Q
     Video(int M, double a, double b, double c, double d, int n, int m, const vector<double> & Q);
     //calcul du processus itératif pour un probleme donne
-    void resolution(vector<double> & khi, double r, double delta_t);
+    void resolution(vector<double> & khi, double r);
 
     //export du maillage dans un fichier
     void saveToFile(const char *fn) const;
