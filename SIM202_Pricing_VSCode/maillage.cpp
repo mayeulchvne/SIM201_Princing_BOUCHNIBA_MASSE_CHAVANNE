@@ -1039,7 +1039,7 @@ void Video::resolution(vector<double> & khi, double r) {
     }
 }
 
-//export de la video dans un fichier texte
+//export du maillage dans un fichier
 void Video::saveToFile(const char *fn ) const {
     
     string filename(fn);
@@ -1049,17 +1049,29 @@ void Video::saveToFile(const char *fn ) const {
     if (!os.is_open()) {
         stop(" echec de l'ouverture du fichier ");
     }
+
+    os << this->maille.sommets.size() << endl;
+    for (int i=0; i<this->maille.sommets.size(); ++i) {
+        os << this->maille.sommets[i].x << "," << this->maille.sommets[i].y << endl;
+    }
+    
     
     list<Numeros>::const_iterator itt=this->maille.triangles.begin();
     for(; itt!=this->maille.triangles.end() ; itt++)
     {
-        for(int i=0; i<3; i++)
-        {
-            const Point& p=this->maille.sommets[(*itt)[i]];
-            os << p.x  << " , " << p.y << endl;
-        }
+        os << (*itt)[0] << "," << (*itt)[1] << "," << (*itt)[2] << endl;
     }
     
-    os.close();
-    
+    os << this->M << endl;
+
+    list<vector<double> >::const_iterator itim=this->images.begin();
+    for(; itim!=this->images.end() ; itim++) {
+        for (int i=0; i<this->maille.sommets.size(); ++i) {
+            os << (*itim)[i] << endl ;
+        }
+    }
+
+    os << "fin de fichier" << endl;
+
+    os.close();   
 }
