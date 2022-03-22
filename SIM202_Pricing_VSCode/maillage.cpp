@@ -57,7 +57,7 @@ return s;
 
 //opérateurs internes et fonctions membres
 
-double Matrice::aff(int i,int j) const {return (*this)(i,j);}
+double Matrice::aff(int i,int j) const {return (*this)(i,j);} //permet d'éviter les problèmes d'utilisation systématique de l'accesseur non const pour (*this)
 
 //opérateurs externes
 ostream& operator<<(ostream& os,const Matrice& M){
@@ -96,14 +96,6 @@ ostream& operator<<(ostream& os, const vector<int>& v)
     return os;
 }
 
-vector<int> profil(const vector<int>& v)
-{   vector<int> u(v.size());
-    u[0]=0;
-    for(int i=1;i<v.size();i++){
-        u[i]=i+1-v[i]+u[i-1];
-    }
-    return u;
-}
 
 //===================================================================================================
 //                                     Classe Matrice_S
@@ -236,6 +228,7 @@ vector<double> operator*(const Matrice_S& M,const vector<int>& X)
 
 
 //opérateurs internes
+//**accesseurs
 double Matrice_PS::operator()(int i, int j) const {
     if(i>this->dim || j>this->dim){
         cout<<"Erreur, hors dimension, la dimension est"<<this->dim;
@@ -268,7 +261,7 @@ double& Matrice_PS::operator()(int i, int j) {
     return this->Mat[this->Stack[i-1]-(i-j)];
 }
 
-//**opérateurs algébriques sur la même classe
+//**opérateurs algébriques de Matrice_PS sur Matrice_PS
 
 Matrice_PS& Matrice_PS::operator+=(const Matrice_PS& M)
 {
@@ -325,7 +318,7 @@ Matrice_PS& Matrice_PS::operator/=(const double& a)
 }
 
 
-//**opérateurs algébriques sur Matrice_S
+//**opérateurs algébriques de Matrice_PS sur Matrice_S
 
 Matrice_PS& Matrice_PS::operator+=(const Matrice_S& M)
 {
@@ -395,7 +388,7 @@ Matrice_PS& Matrice_PS::operator=(const Matrice_S& M)
 
 
 
-//Opérateurs externes
+//Opérateurs externes classiques
 Matrice_PS operator+(const Matrice_PS& M,const Matrice_PS& H){Matrice_PS A(M); return A+=H;}
 Matrice_PS operator+(const Matrice_PS& M,const Matrice_S& H){Matrice_PS A(M); return A+=H;}
 Matrice_PS operator+(const Matrice_S& M,const Matrice_PS& H){Matrice_PS A(H); return A+=M;}
@@ -407,7 +400,8 @@ Matrice_PS operator-(const Matrice_S& M,const Matrice_PS& H){Matrice_PS A(H); re
 Matrice_PS operator*(const Matrice_PS& M,const double& a){Matrice_PS A(M); return A*=a;}
 Matrice_PS operator/(const Matrice_PS& M,const double& a){Matrice_PS A(M); return A/=a;}
 
-vector<double> operator*(Matrice_PS& M,vector<double>& X)
+
+//produit Matrice vecteur (pas optimisé pour des matrices profils)vector<double> operator*(Matrice_PS& M,vector<double>& X)
 {   
     int d=X.size();
     if(M.d()!=d){cout<<"erreur dimensions pour le produit matrice vecteur "<<M.d()<<" ; "<<d<<endl; exit(-1);}
@@ -418,6 +412,7 @@ vector<double> operator*(Matrice_PS& M,vector<double>& X)
     }
     return u;
 }
+
 
 vector<double> operator*(Matrice_PS& M,vector<int>& X)
 {   
@@ -432,33 +427,166 @@ vector<double> operator*(Matrice_PS& M,vector<int>& X)
 }
 
 
-//factorisation LU
-Matrice_PS& Matrice_PS::LU() {
+//===================================================================================================
+//                                     Fonctions utiles sur les profils et Matrices
+//===================================================================================================
+
+//Créations d'un profil type Matrice
+
+//A partir d'un profil classique de matrice
+vector<int> profil(const vector<int>& v)  
+{   vector<int> u(v.size());
+    u[0]=0;
+    for(int i=1;i<v.size();i++){
+        u[i]=i+1-v[i]+u[i-1]+1;
+    }
+    return u;
+}
+
+
+//profil de la matrice résultant du produit de deux vecteurs de même profil
+vector<int> profil_colonne(const vector<double>& v) 
+{   int d=v.size();
+    vector<int> u(d,0);
+    int i=0;
+    while(v[i]==0){i++;}
+    u[i]=i+1;
+    for(int j=i+1;j<d;j++){
+        if(v[j]!=0){u[j]=i+1;}
+    }
+    return profil(u);
+}
+
+
+// extraction de la matrice privée des première ligne et première colonne
+Matrice_PS down(const Matrice_PS& M)
+{
+    vector<int> u=profil_inv(M.Stack);	//on opère directement sur les vecteurs pour ne pas avoir à faire des copies très coûteuses car n'utilisant pas le profil
+    vector<double> h=M.Mat;
+    vector<int>::iterator it=u.begin();
+    vector<double>::iterator it2=h.begin();
+    int j=0;
+    for(int i=1;i<M.d();i++)
+    {
+        if(u[i]==1){
+            h.erase(it2+M.Stack[i-1]+1-j);
+            h.erase(it2+M.Stack[i-1]+M.Stack[M.d()-1]-(i-1)-2*j);
+        }
+        else{u[i]=u[i]-1;}
+    }
+    h.erase(it2);
+    u.erase(it);
+    Matrice_PS S(profil(u));
+    S.Mat=h;
+    return S;
+}
+
+Matrice_S down_S(const Matrice_S& M)
+{
+    vector<int> u=profil_inv(M.Stack);
+    vector<double> h=M.Mat;
+    vector<int>::iterator it=u.begin();
+    vector<double>::iterator it2=h.begin();
+    int j=0;
+    for(int i=1;i<M.d();i++)
+    {
+        if(u[i]==1){
+            h.erase(it2+M.Stack[i-1]+1-j);
+            j++;
+        }
+        else{u[i]=u[i]-1;}
+    }
+    h.erase(it2);
+    u.erase(it);
+    Matrice_S S(profil(u));
+    S.Mat=h;
+    return S;
+}
+
+//récupération du profil d'une matrice à partir du Stack d'une matrice
+vector<int> profil_inv(const vector<int>& v)
+{
+    vector<int> u(v.size(),0);
+    u[0]=1;   
+    for(int i=1;i<v.size();i++){u[i]=i+1 -(v[i]-v[i-1])+1;}
+    return u;
+
+}
+
+bool verif_profil(const Matrice_PS& M,int i,int j)
+{
+    vector<int> u=profil_inv(M.Stack);
+    if(j<=i){return j>=u[i-1];}
+    return i>=u[j-1];
+    
+}
+
+
+//factorisation LU (utilise les fonctions défnies sur les matrices profils pour être efficace et solide,ne marche pas à cause de problèmes d'allocation mémoire)
+//Nous avons également tenté de faire les instanciations de matrices en passant par des pointeurs en allouant et libérant dynamiquement l'espace mais cela générait encore plus d'erreurs 
+// Matrice_PS& Matrice_PS::LU()
+// {
+//     double d=this->d();
+//     double p=0;
+//     double g=0;
+//     Matrice_PS S=Matrice_PS((*this));
+//     for(int i=1;i<=d;i++)
+//     {
+//         p=this->aff(i,i);
+//         for(int k=i+1;k<=d;k++)
+//         {   
+//             g=this->aff(k,i);
+//             if(g!=0)
+//             {
+//                 (*this)(k,i)=S(k,i)/p;
+//                 (*this)(i,k)=S(i,k);
+//             }
+//         }
+//         vector<double> h(d-(i-1),0.);		 
+//         vector<int> q=profil_inv(profil_colonne(h));
+//         for(int j=i;j<d;j++){h[j]=this->aff(j,i);}	
+//         Matrice_PS T=Matrice_PS(profil_colonne(h));   //création de la matrice correspondant au produit des lignes et colonnes 
+//         for(int j=0;j<d;j++){
+//             for(int k=q[j];k<=j+1;j++)
+//             {
+//                 T(j+1,k)=h[j]*(*S)(i,k);		//remplissage
+//                 T(k,j+1)=h[k-1]*(*S)(i,j+1);
+//             }
+//         }
+//         S=down(S);					//S devient elle même privée de ses première ligne et première colonne
+//         S-=(T/=p);
+//     }
+//     return *this;
+// }
+
+//Factorisation LU ne passant pas par les opérations de Matrices (moins solide)
+Matrice_PS& Matrice_PS::LU()
+{
     double d=this->d();
-    Matrice_PS U((*this).Stack);
-    Matrice_PS L((*this).Stack);
     double p=0;
+    double g=0;
     for(int i=1;i<=d;i++)
     {
-        p=(*this)(i,i);
-        L(i,i)=1;
-        for(int j=i+1;j<=d;j++)
-        {
-            L(j,i)=(*this)(j,i)/p;
-        }
-        U(i,i)=p;
-        for(int k=i+1;k<=d;k++){U(i,k)=(*this)(i,k);}
+        p=this->aff(i,i);
+        if(p==0){stop("matrice non factorisable");}
         for(int k=i+1;k<=d;k++)
-        {
-            for(int j=i+1;j<=d;j++){(*this)(k,j)=(*this)(k,j)-L(k,i)*U(i,j);}
-
+        {   
+            g=this->aff(k,i);
+            if(g!=0)
+            {
+                (*this)(k,i)=this->aff(k,i)/p;
+                (*this)(i,k)=this->aff(i,k);
+            }
         }
-        
+        for(int j=i+1;j<=d;j++){
+            {
+                for(int k=i+1;k<=d;k++){
+                    if(verif_profil((*this),j,k)){(*this)(j,k)=this->aff(j,k)-this->aff(j,i)*this->aff(i,k);}
+                } 
+            }
+        }
     }
-    vector<Matrice_PS> T(2);
-    T[0]=L;
-    T[1]=U;
-    return T;
+    return *this;
 }
 
 //---------------------------------------------------------------------------
@@ -1026,7 +1154,7 @@ Video::Video(int M, double a, double b, double c, double d, int n, int m, const 
 }
 
 //calcul du processus itératif pour un probleme donne
-void Video::resolution(vector<double> & khi, double r, double delta_t) {
+void Video::resolution(vector<double> & khi, double r) {
     list<vector<double> >::iterator itim=this->images.begin(); //itérateur sur les vecteurs image
 
     Maillage tmp(this->maille);                 //maillage temporaire initialisé à la valeur this->maille
@@ -1071,7 +1199,7 @@ void Video::saveToFile(const char *fn ) const {
         }
     }
 
-    os << 1.0 << endl;
+    os << "fin de fichier" << endl;
 
     os.close();   
 }
