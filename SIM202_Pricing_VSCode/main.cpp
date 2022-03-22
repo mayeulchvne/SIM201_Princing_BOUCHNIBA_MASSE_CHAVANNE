@@ -10,37 +10,53 @@
 #include <fstream>
 #include "maillage.hpp"
 
-int main( int argc, char * argv[] )
-//<<<<<<< HEAD
-{ //test de la classe Point
-  Point O, P(0,1), Q(1,1), R(1);
-  cout<<"O+P+2.*Q-R/2.="<<(O+P+2.*Q-R/2.) <<endl;
-  cout<<"O!=P -> "<<(O!=P?"true":"false")<<" O==P -> "<<(O==P?"true":"false")<<endl;
-  //test de la classe Numeros
-  Numeros ns(1,2,3);
-  cout<<"Numeros ns(1,2,3) -> "<<ns<<endl;
-  cout<<"ns(2)="<<ns(2)<<endl;
-  //test de la classe Maillage
-  srand(time(NULL));
-  cout<<"Maillage du carre [0,1]x[0,1]"<<endl;
-  vector<double> Z(3*5, 0.);
-  Maillage mc(4,2, Z);            //maillage carré unité
-  mc.affiche();
-  mc.saveToFile("maillage1.txt");
-  cout<<"Maillage du rectangle [1,2]x[0,2]"<<endl;
-  vector<double> W(5*5, 0.);
-  Maillage mr(1,2,0,2,4,4, W); //maillage rectangle
-  mr.affiche();
-  mr.saveToFile("maillage2.txt");
-  cout<<"Transformation affine du maillage du carre unite"<<endl;
-  vector<double> A(4,0); A[0]=1;A[3]=3;
-  vector<double> t(2,0); t[0]=-1;
-  mc.tf_affine(A,t); //transformation affine de maillage
-  mc.affiche();
-//  cout<<"Concatenation de maillage"<<endl;
-//  Maillage mf = Maillage(4,2) + mr; //concaténation de maillages
-//  mf.affiche();
-//  mf.saveToFile("mf.mail");
+int main( int argc, char * argv[] ) {
+  //dimension du maillage
+  double a(0) ;
+  double b(1);
+  double c(0);
+  double d(1);
+
+  //nombre de ligne et de colonnes calculs pour un pas h = max( (b-a)/m , (c-d)/n )
+  // double h;
+  int n(50);
+  int m(50);
+
+  //donnée du modèle de BS
+  double K;
+  vector<double> khi(4 , 0.);
+  khi[0] =  0.04; khi[1] =  -0.024; khi[3] =  0.04; khi[2] =  -0.024; 
+  double r(0.05);
+
+  //nombre d'instants & pas de temps
+  int M(100);
+  double delta_t(1./M);
+
+  //création du vecteur initiale Q0
+  vector<double> Q0((n+1)*(m+1), 0.);
+
+  //creation du maillage
+  Maillage maillage(a, b , c, d, n, m, Q0);
+
+  //remplissage du vecteur initiale Q0
+  Point P(0.,0.);
+  double tmp = 0.;
+  for(int q =0 ; q < (n+1)*(m+1) ; q++) {
+    P = maillage.sommets[q];
+    tmp = P.x + P.y - K;
+    if(tmp >= 0) Q0[q] = tmp;
+    else Q0[q] = 0.;
+  }
+
+  //creation d'une video 
+  Video video(M, a, b , c, d, n, m, Q0);
+
+  //resolution du probleme temporel
+  video.resolution(khi, r, delta_t);
+
+  //écriture des resultats dans un fichier texte
+  video.saveToFile("maillage1.txt");
+
 
   return 0;
 }
