@@ -32,6 +32,24 @@ vector<double> vecteur(vector< vector<double> > vec, int i) {
 return vect;
 }
 
+//surcharge de l'addition entre vector<double>
+vector<double> operator +(const vector<double>& a,const vector<double>& b) {
+    if(a.size()!=b.size()) {stop(" : tailles de vecteurs incompatibles");};
+    int n=a.size();
+    vector<double> s(n);
+    for (int i=0; i<n; ++i) {s[i]=a[i]+b[i];};
+return s;
+}
+
+//surcharge du produit scalaire entre deux vecteur
+double operator *(vector<double> a,vector<double> b) {
+    if(a.size()!=b.size()) {exit(-1);};
+    int n=a.size();
+    double s=0;
+    for (int i=0; i<n; ++i) {s+=a[i]*b[i];};
+return s;
+}
+
 //===================================================================================================
 //                                     Classe Matrice
 //===================================================================================================
@@ -56,8 +74,7 @@ ostream& operator<<(ostream& os,const Matrice& M){
 
 
 
-ostream& operator<<(ostream& os, const vector<double>& v) 
-{
+ostream& operator<<(ostream& os, const vector<double>& v) {
     os << "[";
     for (vector<double>::const_iterator ii = v.begin(); ii != v.end(); ++ii)
     {
@@ -66,6 +83,8 @@ ostream& operator<<(ostream& os, const vector<double>& v)
     os << " ]";
     return os;
 }
+
+
 ostream& operator<<(ostream& os, const vector<int>& v) 
 {
     os << "[";
@@ -77,7 +96,6 @@ ostream& operator<<(ostream& os, const vector<int>& v)
     return os;
 }
 
-
 vector<int> profil(const vector<int>& v)
 {   vector<int> u(v.size());
     u[0]=0;
@@ -86,7 +104,6 @@ vector<int> profil(const vector<int>& v)
     }
     return u;
 }
-
 
 //===================================================================================================
 //                                     Classe Matrice_S
@@ -140,6 +157,7 @@ Matrice_S&  Matrice_S::operator+=(const Matrice_S& M){
     this->Mat=U.Mat;
     return *this;
 }
+
 Matrice_S& Matrice_S::operator-=(const Matrice_S& M){
     if(this->dim!=M.d()){cout<<"les deux matrcies n'ont pas même dimensions"<<endl; exit(-1);}  //On crée un profil adapté à la somme des deux matrices
     vector<int> S(M.d(),0);
@@ -157,6 +175,7 @@ Matrice_S& Matrice_S::operator-=(const Matrice_S& M){
     this->Mat=U.Mat;
     return *this;
 }
+
 Matrice_S& Matrice_S::operator*=(const double& a)
 {   for(int i=0;i<this->Mat.size();i++){this->Mat[i]*=a;}
     return *this;
@@ -177,13 +196,12 @@ Matrice_S& Matrice_S::operator=(const Matrice_S& M)
     return *this;
 }
 
-
-
 //fonctions externes
 //**opérateurs algébriques
 Matrice_S operator+(const Matrice_S& M,const Matrice_S& H){ Matrice_S A(M); return A+=H;}
 Matrice_S operator-(const Matrice_S& M,const Matrice_S& H){Matrice_S A(M); return A-=H;}
 Matrice_S operator*(const Matrice_S& M,const double& a){Matrice_S A(M); return A*=a;}
+Matrice_S operator*(const double& a, const Matrice_S& M){Matrice_S A(M); return A*=a;}
 Matrice_S operator/(const Matrice_S& M,const double& a){Matrice_S A(M); return A/=a;}
 
 vector<double> operator*(const Matrice_S& M,const vector<double>& X)
@@ -400,6 +418,7 @@ vector<double> operator*(Matrice_PS& M,vector<double>& X)
     }
     return u;
 }
+
 vector<double> operator*(Matrice_PS& M,vector<int>& X)
 {   
     int d=X.size();
@@ -414,8 +433,7 @@ vector<double> operator*(Matrice_PS& M,vector<int>& X)
 
 
 //factorisation LU
-vector<Matrice_PS> Matrice_PS::LU()
-{
+Matrice_PS& Matrice_PS::LU() {
     double d=this->d();
     Matrice_PS U((*this).Stack);
     Matrice_PS L((*this).Stack);
@@ -443,11 +461,11 @@ vector<Matrice_PS> Matrice_PS::LU()
     return T;
 }
 
-
-
 //---------------------------------------------------------------------------
 //     classe POINT  (point 2D)
 //---------------------------------------------------------------------------
+
+
 //transformation affine Ax+t : A=(A11,A12,A21,A22) et t=(t1,t2)
 Point& Point::tf_affine(const vector<double> & A, const vector<double> &t)
 { double xx=x,yy=y;
@@ -526,14 +544,14 @@ Maillage::Maillage(Maillage & M) {
         this->sommets[i] = M.sommets[i];
         this->valeurs[i] = M.valeurs[i];
     }
-    list<Numeros>::const_iterator itt=M.triangles.begin();
-    list<Numeros>::const_iterator itt=M.triangles.begin();
+    list<Numeros>::const_iterator itt1=M.triangles.begin();
+    list<Numeros>::const_iterator itt2=this->triangles.begin();
 
-    while(itt!=this->triangles.end())
+    while(itt1!=this->triangles.end())
     {
-        this->triangles.list<Numeros>::operator[](i) = *itt;
-        itt++ ;
-        i++
+        itt1 = itt2;
+        itt1++ ;
+        itt2++ ;
     }
 }
 
@@ -646,20 +664,22 @@ Maillage::Maillage( double a, double b, double c, double d, int n, int m, const 
 }
 
 //ASSEMBLAGE DE LA MATRICE B
-Matrice_PS& maillage::mat_B() { //A PARTIR DE LA LISTE DES TRIANGLES CONTENANT LES SOMMETS
-    vector<int> vect_BB=this->indice_profil();
-    Matrice_PS& BB(profil(vect_BB)); //matrice carree profilee
+Matrice_PS& Maillage::mat_B() { //A PARTIR DE LA LISTE DES TRIANGLES CONTENANT LES SOMMETS
+    const vector<int> vect_BB=this->indice_profil();
+    Matrice_PS BB(profil(vect_BB)); //matrice carree profilee
 
     vector<int> vect_B_el(3,1);
-    Matrice_PS& Bel(profil(vect_B_el)); //matrice elementaire B
-    for (int l=1; l<=this->triangles.size(); ++l) { //boucle sur le nombre de triangles
-        Numeros Num(this->triangles[l]) //l-eme ligne de la matrice stockant les triangles
+    Matrice_PS Bel(profil(vect_B_el)); //matrice elementaire B
+
+    list<Numeros>::const_iterator itt=this->triangles.begin(); //iterateur sur les triangles
+    while(itt!=this->triangles.end()) {
+        Numeros Num(*itt) ; //l-eme ligne de la matrice stockant les triangles
         int i1=Num[1]; int i2=Num[2]; int i3=Num[3]; //indices des sommets du l-eme triangle
         Bel=mat_elem_B(this->sommets[i1],this->sommets[i2],this->sommets[i3]); //matrice elementaire par acces aux coordonnees du (resp.) 1,2,3-eme sommet du l-eme triangle
         for (int i=1;i<=3;++i) {
-            int I=this->Num[i];
+            int I=Num[i];
             for (int j=1;j<=3;++j) {
-                J=this->Num[j]; 
+                int J=Num[j]; 
                 BB(I,J)+=Bel(i,j);
             }
         }
@@ -670,17 +690,19 @@ return BB;
 //ASSEMBLAGE DE LA MATRICE MASSE
 Matrice_S& Maillage::mat_M() { //A PARTIR DE LA LISTE DES TRIANGLES CONTENANT LES SOMMETS
     vector<int> vect_MM=this->indice_profil();
-    Matrice_S& MM(profil(vect_MM)); //matrice carree taille nombre de sommets
+    Matrice_S MM(profil(vect_MM)); //matrice carree taille nombre de sommets
     vector<int> vect_M_el(3,1);
-    Matrice_S& Mel(profil(vect_M_el)); //matrice elementaire de masse
-    for (int l=1; l<=this->triangles.size(); ++l) { //boucle sur le nombre de triangles
-        Numeros Num(this->triangles[l]) //l-eme ligne de la matrice stockant les triangles
+    Matrice_S Mel(profil(vect_M_el)); //matrice elementaire de masse
+
+    list<Numeros>::const_iterator itt=this->triangles.begin(); //iterateur sur les triangles
+    while(itt!=this->triangles.end()) {
+        Numeros Num(*itt) ; //l-eme ligne de la matrice stockant les triangles
         int i1=Num[1]; int i2=Num[2]; int i3=Num[3]; //indices des sommets du l-eme triangle
         Mel=mat_elem_M(this->sommets[i1],this->sommets[i2],this->sommets[i3]); //matrice elementaire par acces aux coordonnees du (resp.) 1,2,3-eme sommet du l-eme triangle
         for (int i=1;i<=3;++i) {
-            int I=this->Num[i];
+            int I=Num[i];
             for (int j=1;j<=3;++j) {
-                J=this->Num[j]; 
+                int J=Num[j]; 
                 MM(I,J)+=Mel(i,j);
             }
         }
@@ -689,19 +711,21 @@ return MM;
 }
 
 //ASSEMBLAGE DE LA MATRICE K
-Matrice Maillage::mat_K() { 
+Matrice_S& Maillage::mat_K() { 
     vector<int> vect_KK=this->indice_profil();
-    Matrice_S& KK(profil(vect_KK)); //matrice carree profilee
-    vector<int> vect_K_el(3,1)
-    Matrice_S& Kel(profil(vect_K_el)); //matrice elementaire de masse
-    for (int l=1; l<=this->triangles.size(); ++l) { //boucle sur le nombre de triangles
-        Numeros Num(this->triangles[l]) //l-eme ligne de la matrice stockant les triangles
+    Matrice_S KK(profil(vect_KK)); //matrice carree profilee
+    vector<int> vect_K_el(3,1);
+    Matrice_S Kel(profil(vect_K_el)); //matrice elementaire de masse
+
+    list<Numeros>::const_iterator itt=this->triangles.begin(); //iterateur sur les triangles
+    while(itt!=this->triangles.end()) { 
+        Numeros Num(*itt); //l-eme ligne de la matrice stockant les triangles
         int i1=Num[1]; int i2=Num[2]; int i3=Num[3]; //indices des sommets du l-eme triangle
         Kel=mat_elem_K(this->sommets[i1],this->sommets[i2],this->sommets[i3]); //matrice elementaire par acces aux coordonnees du (resp.) 1,2,3-eme sommet du l-eme triangle
         for (int i=1;i<=3;++i) {
-            int I=this->Num[i]; //index (entier) du sommet i du triangle l
+            int I=Num[i]; //index (entier) du sommet i du triangle l
             for (int j=1;j<=3;++j) {
-                J=this->Num[j]; //index (entier) du sommet i du triangle l
+                int J=Num[j]; //index (entier) du sommet i du triangle l
                 KK(I,J)+=Kel(i,j);
             }
         }
@@ -710,27 +734,27 @@ return KK;
 }
 
 //MATRICE D
-Matrice_PS& Maillage::mat_D() {
+Matrice_PS& Maillage::mat_D(double r) {
     vector<int> vect_DD=this->indice_profil();
-    Matrice_PS& DD(profil(vect_DD));
-    Matrice M(mat_M());
-    Matrice B(mat_B());
-    Matrice K(mat_M());
+    Matrice_PS DD(profil(vect_DD));
+    Matrice_S& M(mat_M());
+    Matrice_PS& B(mat_B());
+    Matrice_S& K(mat_M());
     DD=r*M+B+K;
 return DD;
 }
 
 //CALCUL MATRICE SOURCE A
-Matrice_S& source_A(Point *P) {
+Matrice_S source_A(vector<double> & khi, Point & P) {
     vector<int> v(2,1);
-    Matrice_S& A(profil(v));
+    Matrice_S A(profil(v));
     A(1,1)=khi[0]*P.x*P.x/2; A(2,1)=khi[1]*P.x*P.y/2; //calcul de chaque coefficient de la matrice A, khi1=khi2, A symétrique
     A(1,2)=khi[2]*P.x*P.y/2; A(2,2)=khi[3]*P.y*P.y/2;
 return A;
 }
 
 //CALCUL DE LA SOURCE V
-vector<double> source_V(Point *P) {
+vector<double> source_V(vector<double> & khi, Point & P, double r) {
     vector<double> V; 
     V.push_back((khi[0]+khi[1]/2-r)*P.x); 
     V.push_back((khi[3]+khi[2]/2-r)*P.y);
@@ -738,7 +762,7 @@ return V;
 }
 
 //CALCUL DE MATRICE ELEMENTAIRE M
-Matrice_S& mat_elem_M (Point * P1,Point * P2,Point * P3){
+Matrice_S mat_elem_M (Point & P1,Point & P2,Point & P3){
     double x1 = P1.x; double y1 = P1.y; //coordonnees des points du triangle choisi pour calcul sa matrice de masse (elementaire)
     double x2 = P2.x; double y2 = P2.y;
     double x3 = P3.x; double y3 = P3.y;
@@ -747,21 +771,21 @@ Matrice_S& mat_elem_M (Point * P1,Point * P2,Point * P3){
 
 
     vector<int> vect_M_elem(3,1);
-    Matrice_S& M_elem(profil(vect_M_elem)); //creation matrice 3x3 elementaire, a voir selon syntaxe
+    Matrice_S M_elem(profil(vect_M_elem)); //creation matrice 3x3 elementaire, a voir selon syntaxe
 
     double Abs_Det_Bl = abs(D); //determinant jacobienne pour changement dans le triangle de base
 
     vector<int> vect_m_des_w(3,1);
-    Matrice_S& M_des_w(profil(vect_m_des_w));
+    Matrice_S M_des_w(profil(vect_m_des_w));
     M_des_w(1,1) = 1/3 ; M_des_w(1,2) = 1/6; M_des_w(1,3) = 1/6; //calcul des elements via les fonctions barycentriques(?)
     M_des_w(2,1) = 1/6; M_des_w(2,2) = 2/3; M_des_w(2,3) = 1/6;
     M_des_w(3,1) = 1/6; M_des_w(3,2) = 1/6; M_des_w(3,3) = 2/3;
 
     for (int i=1;i<=3;++i){
         for (int j=1;j<=3;++j){
-            Terme_1 = (1/6)*M_des_w(i,1)*M_des_w(j,1);
-            Terme_2 = (1/6)*M_des_w(i,2)*M_des_w(j,2);
-            Terme_3 = (1/6)*M_des_w(i,3)*M_des_w(j,3);
+            double Terme_1 = (1/6)*M_des_w(i,1)*M_des_w(j,1);
+            double Terme_2 = (1/6)*M_des_w(i,2)*M_des_w(j,2);
+            double Terme_3 = (1/6)*M_des_w(i,3)*M_des_w(j,3);
 		    M_elem(i,j) = (Terme_1 + Terme_2 + Terme_3)*Abs_Det_Bl; //calcul des coefficients de la matrice elementaire
         };
     };
@@ -769,33 +793,31 @@ return M_elem;
 };
 
 //CALCUL MATRICE ELEMENTAIRE K
-Matrice_S& mat_elem_K (Point * P1,Point * P2,Point * P3) {
+Matrice_S mat_elem_K (Point & P1,Point & P2,Point & P3, vector<double> khi) {
     double x1 = P1.x; double y1 = P1.y; //coordonnees des points du triangle choisi pour calcul sa matrice de masse (elementaire)
     double x2 = P2.x; double y2 = P2.y;
     double x3 = P3.x; double y3 = P3.y;
 
     double D = ((x2-x1)*(y3-y1) - (y2-y1)*(x3-x1)); //au signe pres, deux fois la taille du triangle choisi
-    if (abs(D) <= eps) { //fixer un eps petit pour verifier que le triangle n'est pas plat
-        exit('l aire d un triangle est nulle'); 
-    }; 
+    
 
     vector<int> vect_K_el(3,1);
-    Matrice_S& Kel(profil(vect_K_el)); //matrice elementaire taille 3x3
+    Matrice_S Kel(profil(vect_K_el)); //matrice elementaire taille 3x3
 
     vector<int> vect_Bl(2,1);
-    Matrice_PS& Bl(profil(vect_Bl)); //Matrice pour ponderer les changements de base des coordonnees des gradients
+    Matrice_PS Bl(profil(vect_Bl)); //Matrice pour ponderer les changements de base des coordonnees des gradients
     Bl(1,1)= x2-x1; Bl(1,2)= x3-x1;
     Bl(2,1)= y2-y1; Bl(2,2)= y3-y1;
 
     double Abs_Det_Bl = abs(D);
 
     vector<int> vect_inv_Bl(2,1);
-    Matrice_PS& inv_Bl(profil(vect_inv_Bl)); // transposee de BL^{-1}
+    Matrice_PS inv_Bl(profil(vect_inv_Bl)); // transposee de BL^{-1}
     inv_Bl(1,1)= Bl(2,2)/D; inv_Bl(1,2)= -Bl(2,1)/D;
     inv_Bl(2,1)= -Bl(1,2)/D; inv_Bl(1,1)= Bl(1,1)/D;
 
     vector<int> vect_id(2,1);
-    Matrice_S& Id(profil(vect_id));
+    Matrice_S Id(profil(vect_id));
     Id(1,1)= 1; Id(1,2)= 0;
     Id(2,1)= 0; Id(2,2)= 1;
     // utiliser Reftri qui est une liste qui sert de reference aux triangles
@@ -816,7 +838,7 @@ Matrice_S& mat_elem_K (Point * P1,Point * P2,Point * P3) {
     vector<double> Fl_3;
     Fl_3=Bl*S_chap_3 + S;
 
-    Point Fl__1(Fl_1[1],Fl_1[2]));
+    Point Fl__1(Fl_1[1],Fl_1[2]);
     Point Fl__2(Fl_2[1],Fl_2[2]);
     Point Fl__3(Fl_3[1],Fl_3[2]);
     
@@ -834,9 +856,9 @@ Matrice_S& mat_elem_K (Point * P1,Point * P2,Point * P3) {
 
     for (int i=0;i<=2;++i) {
         for (int j=0;j<=2;++j) {
-            double Terme_1 = (1/6)*Inv_Bl*Inv_Bl*(source_A(Fl__1)*vecteur(Mat_des_gradients_w[i]))*vecteur(Mat_des_gradients_w[j])*Abs_Det_Bl; // fonction qui permet d'isoler une colonne ou une ligne de matrice (:,i)
-            double Terme_2 = (1/6)*Inv_Bl*Inv_Bl*(source_A(Fl__2)*Mat_des_gradients_w[i])*Mat_des_gradients_w[j]*Abs_Det_Bl;
-            double Terme_3 = (1/6)*Inv_Bl*Inv_Bl*(source_A(Fl__3)*Mat_des_gradients_w[i])*Mat_des_gradients_w[j]*Abs_Det_Bl;
+            double Terme_1 = Abs_Det_Bl*(1/6)*(source_A(khi, Fl__1)*(inv_Bl*vecteur(Mat_des_gradients_w, i))*(inv_Bl*vecteur(Mat_des_gradients_w, j))); // fonction qui permet d'isoler une colonne ou une ligne de matrice (:,i)
+            double Terme_2 = Abs_Det_Bl*(1/6)*(source_A(khi, Fl__2)*(inv_Bl*vecteur(Mat_des_gradients_w, i))*(inv_Bl*vecteur(Mat_des_gradients_w, j)));
+            double Terme_3 = Abs_Det_Bl*(1/6)*(source_A(khi, Fl__3)*(inv_Bl*vecteur(Mat_des_gradients_w, i))*(inv_Bl*vecteur(Mat_des_gradients_w, j)));
             Kel(i,j) = Terme_1 + Terme_2 + Terme_3;
         }
     }
@@ -844,97 +866,92 @@ return Kel;
 }
 
 //CALCUL MATRICE ELEMENTAIRE B
-Matrice_PS& mat_elem_B(Point * P1,Point * P2,Point * P3)) {
+Matrice_PS mat_elem_B(Point & P1, Point & P2, Point & P3) {
     double x1 = P1.x; double y1 = P1.y; //coordonnees des points du triangle choisi pour calcul sa matrice de masse (elementaire)
     double x2 = P2.x; double y2 = P2.y;
     double x3 = P3.x; double y3 = P3.y;
 
     double D = ((x2-x1)*(y3-y1) - (y2-y1)*(x3-x1)); //au signe pres, deux fois la taille du triangle choisi
 
-    vector<vector<double>> Bl;
-    vector<double> Bl_1;
-    Bl_1.push_back(y2-y3); Bl_1.push_back(x3-x2);
-    vector<double> Bl_2;
-    Bl_2.push_back(y3-y1); Bl_2.push_back(x1-x3);
-    vector<double> Bl_3;
-    Bl_3.push_back(y1-y2); Bl_3.push_back(x2-x1);
-    Bl.push_back(Bl_1); Bl.push_back(Bl_2); Bl.push_back(Bl_3);
+    vector<int> vect_Bl(3,1);
+    Matrice_PS Bl(profil(vect_Bl));
+    Bl(1,1)=y2-y3; Bl(1,2)=x3-x2; Bl(1,3)=0;
+    Bl(2,1)=y3-y1; Bl(2,2)=x1-x3; Bl(2,3)=0;
+    Bl(3,1)=y1-y2; Bl(3,2)=x2-x1; Bl(3,3)=0;
 
     vector<int> vect_M_des_w(3,1);
-    Matrice_PS& M_des_w(profil(vect_M_des_w));
+    Matrice_PS M_des_w(profil(vect_M_des_w));
     M_des_w(1,1) = 1-x1-y1 ; M_des_w(1,2) = 1-x2-y2; M_des_w(1,3) = 1-x3-y3; //calcul des elements via les fonctions barycentriques(?)
     M_des_w(2,1) = x1;       M_des_w(2,2) = x2;      M_des_w(2,3) = x3;
     M_des_w(3,1) = y1;       M_des_w(3,2) = y2;      M_des_w(3,3) = y3;
 
-    vector<vector<double> > S_chap;
-    vector<double> S_chap_1;
-    S_chap_1.push_back(1/6); S_chap_1.push_back(1/6);
-    vector<double> S_chap_2;
-    S_chap_2.push_back(2/3); S_chap_2.push_back(1/6);    
-    vector<double> S_chap_3;
-    S_chap_3.push_back(1/6); S_chap_3.push_back(2/3);
-    S_chap.push_back(S_chap_1); S_chap.push_back(S_chap_2); S_chap.push_back(S_chap_3); 
+    vector<int> vect_S_chap(3,1);
+    Matrice_PS S_chap(profil(vect_S_chap));
+    S_chap(1,1)=1/6; S_chap(1,2)=2/3; S_chap(1,3)=1/6;
+    S_chap(2,1)=1/6; S_chap(2,2)=1/6; S_chap(2,3)=2/3;
+    S_chap(3,1)=0; S_chap(3,2)=0; S_chap(3,3)=0;
 
     vector<int> vect_B_el(3,1);
-    Matrice_PS& Bel(profil(vect_B_el));
+    Matrice_PS Bel(profil(vect_B_el));
     vector<int> vect_temp(3,1);
-    Matrice temp(profil(vect_temp));
-    for (int i=0; i<=2; ++i) {
-        for (int j=0; j<=2; ++j) {
-            temp(i+1,j+1)=vecteur(Bl[i])*vecteur(S_chap[j]);
-        }
-    }
+    Matrice_PS temp(profil(vect_temp));
+    temp=Bl*S_chap;
 
-    Bel=(1/6)*temp*M_des_w;
+    Bel=(1/6)*(temp*M_des_w);
 
 return Bel;
 }
 
 //INVERSION D'UN SYSTEME LINEAIRE PAR FACTORISATION LU
-vector<double>& Maillage::Gauss(){
+vector<double>& Maillage::Gauss(double r, double delta_t){
     vector<double> P_k = this->valeurs;
     int n=this->valeurs.size();
 
 
     Matrice_S& M((*this).mat_M());
-    Matrice_PS& D( (*this).mat_D());
+    Matrice_PS D(this->mat_D(r));
 
 
-    Matrice_PS& E(M+(delta_t)*D); //à définir delta_t
-    vector<double>& B;
+    Matrice_PS E(M+(delta_t)*D); //à définir delta_t
+    vector<double> B;
     B=M*P_k;
     E.LU();
 
-    Matrice_PS* G=E.LU();
-    Matrice_PS& L(G[0]);
-    Matrice_PS& U(G[1]);
+    Matrice_PS& G=E.LU();
 
-    vector<double>& Y(n);
+    vector<double> Y(n);
     Y[0]=B[0];
     for (int j=1; j<n; ++j) {
-        for (int k=1; k<=i; ++k) {
-            Y[j]=B[j]-L(j+1,k+1)*Y[k];
+        for (int k=1; k<=j; ++k) {
+            Y[j]=B[j]-G(j+1,k+1)*Y[k];
         }
     }
 
-    vector<double>& X(n);
+    vector<double> X(n);
     X[0]=Y[0];
     for (int i=1; i<=n; ++i) {
         for (int k=i+1; k<n; ++i) {
-            X[i]=Y[i]-U(i+1,k+1)*X[k];
+            X[i]=Y[i]-G(i+1,k+1)*X[k];
         }
     }
 
+    //test d'invesibilité
+    int booleen = 1;
+    int w=0;
+    while(G(w,w)!=0) w++;
+
+    if(w<(n-1)) stop(" le système n'est pas inversible ");
+
     for (int p=0; p<n; ++p) {
-        X[i]=X[i]/U(i,i);
+        X[p]=X[p]/G(p+1,p+1);
     }
 return X;
 }
 
 //calcul du maillage ulterieur à partir d'un maillage existant
-Maillage& Maillage::resolution(vector<double> & khi, double r) {
+Maillage& Maillage::resolution(vector<double> & khi, double r, double delta_t) {
     Maillage M(*this);
-    M.valeurs = this->Gauss();
+    M.valeurs = this->Gauss(r, delta_t);
 }
 
 //fonction affichant la liste des sommets et des numéros des triangles
@@ -959,34 +976,11 @@ void Maillage::affiche() const{
     }
 }
 
-//export du maillage dans un fichier
-void Maillage::saveToFile(const char *fn ) const {
-    
-    string filename(fn);
-    fstream os;
 
-    os.open(filename, std::ios_base::out);
-    if (!os.is_open()) {
-        stop(" echec de l'ouverture du fichier ");
-    }
-    
-    list<Numeros>::const_iterator itt=this->triangles.begin();
-    for(; itt!=this->triangles.end() ; itt++)
-    {
-        for(int i=0; i<3; i++)
-        {
-            const Point& p=this->sommets[(*itt)[i]];
-            os << p.x  << " , " << p.y << endl;
-        }
-    }
-    
-    os.close();
-    
-}
 
 //fonction generant le vecteur des indices des premiers coefficients non nuls de chaque 
 //lignes du profil des matrices associées au maillage m*n cases (n lignes, m colonnes)
-vector<int> indice_profil() {
+const vector<int> Maillage::indice_profil() {
     int N =this->sommets.size();
     vector<int> P(N, N);
     Numeros tmp(0, 0, 0);
@@ -1010,12 +1004,13 @@ vector<int> indice_profil() {
 
 //constructeur par valeur pour M instant sur un rectangle [a,b]*[c,d] avec m*n cases, et fixant les valeurs initiales a Q
 Video::Video(int M, double a, double b, double c, double d, int n, int m, const vector<double> & Q) {
+    this->delta_t = 1.0/M;
     this->maille.maille_rectangle(a, b, c, d, n, m);
     this->maille.valeur(Q);
-    this->images.resize(M);
+    this->images.resize(0);
     list<vector<double> >::const_iterator itim=this->images.begin();
     while(itim!=this->images.end()) {
-        *itim vector<double>::operator= Q ; 
+        this->images.push_back(Q) ;
         itim++;
     }
 }
@@ -1028,8 +1023,33 @@ void Video::resolution(vector<double> & khi, double r) {
     *itim = tmp.valeurs;
     itim++ ;
     while(itim!=this->images.end()) {
-        tmp = tmp.resolution(khi, r);           //calcul du nouveau maillage temporaire
+        tmp = tmp.resolution(khi, r, delta_t);           //calcul du nouveau maillage temporaire
         *itim = tmp.valeurs;                    //stockage du vecteur image dans this->images
         itim++;
     }
+}
+
+//export du maillage dans un fichier
+void Video::saveToFile(const char *fn ) const {
+    
+    string filename(fn);
+    fstream os;
+
+    os.open(filename, std::ios_base::out);
+    if (!os.is_open()) {
+        stop(" echec de l'ouverture du fichier ");
+    }
+    
+    list<Numeros>::const_iterator itt=this->maille.triangles.begin();
+    for(; itt!=this->maille.triangles.end() ; itt++)
+    {
+        for(int i=0; i<3; i++)
+        {
+            const Point& p=this->maille.sommets[(*itt)[i]];
+            os << p.x  << " , " << p.y << endl;
+        }
+    }
+    
+    os.close();
+    
 }

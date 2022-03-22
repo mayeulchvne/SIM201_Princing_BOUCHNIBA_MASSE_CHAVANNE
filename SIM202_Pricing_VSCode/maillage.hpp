@@ -30,6 +30,12 @@ void stop(const char * msg);
 //transforme les element d'un vecteur de vecteur en vecteur
 vector<double> vecteur(vector<vector<double> > vec, int i);
 
+//surcharge de l'addition entre vector<double>
+vector<double> operator +(const vector<double>& a,const vector<double>& b) ;
+
+//surcharge du produit scalaire entre deux vecteur
+double operator *(vector<double> a,vector<double> b);
+
 //===================================================================================================
 //                                     Classe Matrice
 //===================================================================================================
@@ -63,10 +69,10 @@ public:
     virtual double operator()(int i, int j) const =0;
     virtual double& operator()(int i, int j) =0;
     //opérations globale
-
-    vector<int> profil(const vector<double>& V);
     
 };
+
+vector<int> profil(const vector<double>& V);
 
 //===================================================================================================
 //                                     Classe héritée Matrice_S
@@ -95,6 +101,7 @@ public:
 Matrice_S operator+(const Matrice_S& M,const Matrice_S& H);
 Matrice_S operator-(const Matrice_S& M,const Matrice_S& H);
 Matrice_S operator*(const Matrice_S& M,const double& a);
+Matrice_S operator*(const double& a, const Matrice_S& M);
 Matrice_S operator/(const Matrice_S& M,const double& a);
 vector<double> operator*(const Matrice_S& M,const vector<double>& X);
 vector<double> operator*(const Matrice_S& M,const vector<int>& X);
@@ -119,7 +126,7 @@ public:
             vector<double>::iterator it2=u.begin();
             vector<double>::iterator it3=u.end();
             for(int i=0;i<this->d();i++){u.erase(it2+this->Stack[i]);}
-            this->Mat.insert(it1,it2,it3);
+            this->Mat.vector<double>::insert(it1,it2,it3);
         }
     virtual ~Matrice_PS(){};
     //accesseurs
@@ -135,8 +142,9 @@ public:
      Matrice_PS& operator/=(const double& a);
      Matrice_PS& operator=(const Matrice_PS& M);
      Matrice_PS& operator=(const Matrice_S& M);
-     //fonctions membres
-    vector<Matrice_PS> LU();
+
+     //factorisation LU
+    Matrice_PS& Matrice_PS::LU();
 };
 
 
@@ -161,6 +169,7 @@ ostream& operator<<(ostream& os,const Matrice& M);
 ostream& operator<<(ostream& os, const vector<double>& v);
 
 ostream& operator<<(ostream& os, const vector<int>& v);
+
 
 
 //---------------------------------------------------------------------------
@@ -228,42 +237,39 @@ class Maillage
     Maillage(double a, double b, double c, double d, int n, int m, const vector<double> & Q) ;
 
     //ASSEMBLAGE DE LA MATRICE B
-    Matrice mat_B();
+    Matrice_PS& mat_B();
     //ASSEMBLAGE DE LA MATRICE MASSE
-    Matrice mat_M();
+    Matrice_S& mat_M();
     //ASSEMBLAGE DE LA MATRICE K
-    Matrice mat_K();
+    Matrice_S& mat_K();
     //MATRICE D
-    Matrice mat_D();
+    Matrice_PS& mat_D(double r);
 
     //INVERSION D'UN SYSTEME LINEAIRE PAR FACTORISATION LU
-    vector<double>& Gauss() ;
+    vector<double>& Gauss(double r, double delta_t) ;
 
     //calcul du maillage ulterieur à partir d'un maillage existant
-    Maillage& resolution(vector<double> & khi, double r) ;
+    Maillage& resolution(vector<double> & khi, double r, double delta_t) ;
 
     //fonction affichant la liste des sommets, leur valeur et les numéros des triangles
     void affiche() const;
-    //export du maillage dans un fichier
-    void saveToFile(const char *fn) const;
 
     //fonction generant le vecteur des indices des premiers coefficients non nuls de chaque 
     //lignes du profil des matrices associées au maillage m*n cases (n lignes, m colonnes)
-    vector<int> indice_profil();
+    const vector<int> indice_profil();
 };
 //fonction externes
 
 //CALCUL MATRICE SOURCE A
-Matrice source_A(Point *P) ;
+Matrice_S source_A(vector<double> & khi, Point & P) ;
 //CALCUL DE LA SOURCE V
-vector<double> source_V(Point *P) ;
+vector<double> source_V(vector<double> & khi, Point & P, double r) ;
 //CALCUL DE MATRICE ELEMENTAIRE M
-Matrice mat_elem_M (Point P1,Point P2,Point P3) ;
+Matrice_S mat_elem_M (Point & P1,Point & P2,Point & P3) ;
 //CALCUL MATRICE ELEMENTAIRE K
-Matrice mat_elem_K (Point * P1,Point * P2,Point * P3) ;
+Matrice_S mat_elem_K (Point & P1,Point & P2,Point & P3, vector<double> khi) ;
 //CALCUL MATRICE ELEMENTAIRE B
-Matrice mat_elem_B(Point * P1,Point * P2,Point * P3)) ;
-
+Matrice_PS mat_elem_B (Point & P1,Point & P2,Point & P3) ;
 
 
 //---------------------------------------------------------------------------
@@ -272,14 +278,18 @@ Matrice mat_elem_B(Point * P1,Point * P2,Point * P3)) ;
 
 class Video
 {public:
+    double delta_t;                  //frequence d'échantillonage
     Maillage maille;                 //maillage de base
-    unsigned long M;                 //nombre d'images
-    list<vector<double> > images;     //liste des vecteurs des valeurs du maillage a chaque instant
+    int M;                 //nombre d'images
+    list<vector<double> > images;    //liste des vecteurs des valeurs du maillage a chaque instant
     
     //constructeur par valeur pour M instant sur un rectangle [a,b]*[c,d] avec m*n cases, et fixant les valeurs initiales a Q
     Video(int M, double a, double b, double c, double d, int n, int m, const vector<double> & Q);
     //calcul du processus itératif pour un probleme donne
     void resolution(vector<double> & khi, double r);
+
+    //export du maillage dans un fichier
+    void saveToFile(const char *fn) const;
 };
 
 
