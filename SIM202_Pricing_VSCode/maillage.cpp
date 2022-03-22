@@ -530,6 +530,16 @@ void Numeros::operator = (const Numeros & N) {
 //     classe Maillage  (2D)
 //---------------------------------------------------------------------------
 
+//CONSTRUCTEUR PAR DÉFAUT
+Maillage::Maillage() {
+    vector<Point> sommets(0);
+    vector<double> valeurs(0);
+    list<Numeros> triangles(0);
+    this->sommets = sommets;
+    this->valeurs = valeurs;
+    this->triangles = triangles;
+}
+
 //constructeur par copie d'un maillage
 Maillage::Maillage(Maillage & M) {
     unsigned long n = this->sommets.size();
@@ -1029,7 +1039,7 @@ void Video::resolution(vector<double> & khi, double r) {
     }
 }
 
-//export du maillage dans un fichier
+//export de la video dans un fichier texte
 void Video::saveToFile(const char *fn ) const {
     
     string filename(fn);

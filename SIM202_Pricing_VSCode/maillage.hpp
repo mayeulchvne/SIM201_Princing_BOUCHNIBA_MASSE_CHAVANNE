@@ -280,7 +280,7 @@ class Video
 {public:
     double delta_t;                  //frequence d'échantillonage
     Maillage maille;                 //maillage de base
-    int M;                 //nombre d'images
+    int M;                           //nombre d'images
     list<vector<double> > images;    //liste des vecteurs des valeurs du maillage a chaque instant
     
     //constructeur par valeur pour M instant sur un rectangle [a,b]*[c,d] avec m*n cases, et fixant les valeurs initiales a Q
