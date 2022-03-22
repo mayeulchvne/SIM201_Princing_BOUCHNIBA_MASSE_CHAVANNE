@@ -1,4 +1,4 @@
-%% affiche le maillage au deffirents instant
+%% 
 function affiche_video(UU,Numtri,Coorneu, titre)
 
 % control on the input args
